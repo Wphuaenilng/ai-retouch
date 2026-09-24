@@ -21,6 +21,16 @@ import {
 import { getRunner } from '../tools/runners';
 import { assertCanSubmit, getQuota, precount, refund, settle } from './quota';
 
+function parseOutput(raw: string | null): Record<string, unknown> | null {
+  if (!raw) return null;
+  try {
+    const v = JSON.parse(raw) as unknown;
+    return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function toTaskDTO(row: TaskRow): TaskDTO {
   const tool = getTool(row.tool);
   return {
@@ -37,6 +47,7 @@ export function toTaskDTO(row: TaskRow): TaskDTO {
     costYuan: row.cost_yuan,
     error: row.error,
     errorCode: row.error_code,
+    output: parseOutput(row.output),
     createdAt: row.created_at,
     startedAt: row.started_at,
     finishedAt: row.finished_at,

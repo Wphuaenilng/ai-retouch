@@ -139,6 +139,8 @@ export interface TaskDTO {
   costYuan: number;
   error?: string | null;
   errorCode?: string | null;
+  /** 工具的结构化产出（如 split_layers 的 layers）；前端按 tool 解读 */
+  output?: Record<string, unknown> | null;
   createdAt: string;
   startedAt?: string | null;
   finishedAt?: string | null;
@@ -311,7 +313,8 @@ export type ApiResponse<T> = { ok: true; data: T } | { ok: false; error: ApiErro
 
 export interface DocLayer {
   id: string;
-  kind: 'base' | 'subject' | 'background' | 'adjust' | 'text' | 'mask';
+  // 没有 text 图层：加文字不在当前工具集里，留着只会被 zod 静默剥掉
+  kind: 'base' | 'subject' | 'background' | 'adjust' | 'mask';
   name: string;
   imageId?: string | null;
   visible: boolean;

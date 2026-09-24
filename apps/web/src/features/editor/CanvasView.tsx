@@ -6,13 +6,27 @@ import { filterPropsFor } from '../../lib/clientTools';
 import { setArtHandle, useEditor, type Viewport } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
 
+/** 解码后的位图会一直占内存（一张 2048 约 16MB），必须有个上限 */
 const cache = new Map<string, HTMLImageElement>();
+const CACHE_MAX = 24;
+
+function cacheTouch(url: string, img: HTMLImageElement): void {
+  cache.delete(url);
+  cache.set(url, img);
+  while (cache.size > CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined || oldest === url) break;
+    cache.delete(oldest);
+  }
+}
 
 function useImage(url: string | null): HTMLImageElement | null {
   const [, force] = useState(0);
   useEffect(() => {
     if (!url) return;
-    if (cache.get(url)) {
+    const hit = cache.get(url);
+    if (hit) {
+      cacheTouch(url, hit);
       force((n) => n + 1);
       return;
     }
@@ -27,6 +41,13 @@ function useImage(url: string | null): HTMLImageElement | null {
   }, [url]);
   return url ? (cache.get(url) ?? null) : null;
 }
+
+/** 文档里存的是人话（normal），Konva 要的是 canvas 合成名（source-over） */
+const BLEND: Record<DocLayer['blend'], 'source-over' | 'multiply' | 'screen'> = {
+  normal: 'source-over',
+  multiply: 'multiply',
+  screen: 'screen',
+};
 
 function LayerNode({ layer }: { layer: DocLayer }): ReactElement | null {
   const img = useImage(layer.imageId ? `/api/images/${layer.imageId}` : null);
@@ -53,6 +74,8 @@ function LayerNode({ layer }: { layer: DocLayer }): ReactElement | null {
       scaleX={layer.transform.scaleX}
       scaleY={layer.transform.scaleY}
       rotation={layer.transform.rotation}
+      opacity={layer.opacity}
+      globalCompositeOperation={BLEND[layer.blend]}
       listening={false}
       filters={filters as never}
       {...props}
@@ -278,6 +301,22 @@ export function CanvasView({
     };
   }, []);
 
+  // ⌘/Ctrl+0 适配窗口、⌘/Ctrl+1 回到 100%（部分浏览器会抢走 ⌘1，所以左下角百分比也能点）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+      if (e.key === '0') {
+        e.preventDefault();
+        fitViewport({ w: box.w, h: box.h });
+      } else if (e.key === '1') {
+        e.preventDefault();
+        setViewport({ scale: 1 });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [box.w, box.h, fitViewport, setViewport]);
+
   // 容器尺寸变化时重新计算适配
   useEffect(() => {
     const el = wrapRef.current;
@@ -423,8 +462,11 @@ export function CanvasView({
           <Icon name="i-plus" className="ic sm" />
         </button>
         <span className="sep" />
-        <button className="icbtn" title="适配窗口" onClick={() => fitViewport({ w: box.w, h: box.h })}>
+        <button className="icbtn" title="适配窗口（⌘/Ctrl+0）" onClick={() => fitViewport({ w: box.w, h: box.h })}>
           <Icon name="i-expand" className="ic sm" />
+        </button>
+        <button className="icbtn" title="回到 100%（⌘/Ctrl+1）" onClick={() => setViewport({ scale: 1 })}>
+          <span className="mono" style={{ fontSize: 10 }}>1:1</span>
         </button>
         <button
           className={`icbtn ${tool === 'brush' ? 'on' : ''}`}

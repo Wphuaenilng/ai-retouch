@@ -17,7 +17,7 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"apps/**/*.ts\" \"apps/**/*.tsx\" \"packages/**/*.ts\"",
-    "test": "pnpm --filter @retouch/server test",
+    "test": "pnpm -r test",
     "build": "pnpm -r build",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
   },

@@ -12,7 +12,7 @@ export const layerTransformSchema = z.object({
   rotation: z.number(),
 });
 
-export const layerKindSchema = z.enum(['base', 'subject', 'background', 'adjust', 'text', 'mask']);
+export const layerKindSchema = z.enum(['base', 'subject', 'background', 'adjust', 'mask']);
 
 export const docLayerSchema = z.object({
   id: z.string().min(1),
@@ -24,14 +24,6 @@ export const docLayerSchema = z.object({
   blend: z.enum(['normal', 'multiply', 'screen']),
   transform: layerTransformSchema,
   adjust: z.record(z.string(), z.number()).optional(),
-  text: z
-    .object({
-      value: z.string().max(200),
-      fontSize: z.number().positive().max(400),
-      color: z.string().max(9),
-      fontFamily: z.string().max(60).optional(),
-    })
-    .optional(),
 });
 
 export const docCanvasSchema = z.object({

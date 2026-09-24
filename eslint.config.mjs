@@ -72,7 +72,7 @@ export default tseslint.config(
 
   {
     // node:test 的 it()/describe() 返回的是调度用的 promise，本就不该被 await
-    files: ['apps/server/test/**/*.ts', 'apps/server/scripts/**/*.ts'],
+    files: ['apps/server/test/**/*.ts', 'apps/server/scripts/**/*.ts', 'apps/web/test/**/*.ts'],
     rules: { '@typescript-eslint/no-floating-promises': 'off' },
   },
 

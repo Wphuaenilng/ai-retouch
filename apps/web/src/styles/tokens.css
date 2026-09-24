@@ -483,6 +483,10 @@ input[type='color'] {
   flex-direction: column;
   min-height: 0;
 }
+/* 只有小屏用得上浮层开关 */
+.side-toggle {
+  display: none;
+}
 .panel-h {
   height: 38px;
   flex: none;
@@ -1198,6 +1202,18 @@ input[type='color'] {
   font-family: var(--mono);
   flex: none;
 }
+/* 选中层展开的一行控制：排序 + 不透明度 */
+.lctl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 8px 46px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.lctl .icbtn:disabled {
+  opacity: 0.28;
+}
+
 .layers-foot {
   height: 30px;
   flex: none;
@@ -1273,7 +1289,9 @@ input[type='color'] {
   .splitter {
     display: none;
   }
+  /* 小屏：侧栏是浮层，默认收起，靠顶栏「面板」开关，别让它盖住画布 */
   .side {
+    display: none;
     position: absolute;
     right: 0;
     top: var(--topbar-h);
@@ -1281,6 +1299,12 @@ input[type='color'] {
     width: min(340px, 92vw);
     z-index: 30;
     box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+  }
+  .side.open {
+    display: flex;
+  }
+  .side-toggle {
+    display: inline-flex;
   }
   .tool-list {
     width: 64px;

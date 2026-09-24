@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getTool, visibleTools, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
+import { getTool, visibleTools, type DocCanvas, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { runClientTool } from '../../lib/clientTools';
 import { canvasToBlob } from '../../lib/image';
@@ -16,11 +16,24 @@ function shortLabel(t: ToolDef): string {
   return t.title.split(' / ')[0].replace(/（.*?）/g, '').slice(0, 4);
 }
 
+/** split_layers 的 output.layers → applyLayers 的入参；不足两层就当没这回事 */
+function splitLayerOutput(output: Record<string, unknown> | null | undefined): { name: string; imageId: string | null }[] | null {
+  const v = output?.layers;
+  if (!Array.isArray(v)) return null;
+  const list = v
+    .filter((x): x is { name?: unknown; imageId?: unknown } => typeof x === 'object' && x !== null)
+    .map((x) => ({ name: typeof x.name === 'string' ? x.name : '图层', imageId: typeof x.imageId === 'string' ? x.imageId : null }))
+    .filter((x) => x.imageId !== null);
+  return list.length >= 2 ? list : null;
+}
+
 function LayersPanel(): ReactElement {
   const doc = useEditor((s) => s.doc);
   const toggleLayer = useEditor((s) => s.toggleLayer);
   const setActive = useEditor((s) => s.setActive);
   const removeLayer = useEditor((s) => s.removeLayer);
+  const moveLayer = useEditor((s) => s.moveLayer);
+  const setLayerOpacity = useEditor((s) => s.setLayerOpacity);
   if (!doc) return <></>;
   const layers = [...doc.canvas.layers].reverse();
   return (
@@ -30,43 +43,68 @@ function LayersPanel(): ReactElement {
         <span className="tag">{doc.canvas.layers.length} 个</span>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {layers.map((l) => (
-          <div
-            key={l.id}
-            className={`lrow ${doc.canvas.activeLayerId === l.id ? 'on' : ''} ${l.visible ? '' : 'off'}`}
-            role="button"
-            tabIndex={0}
-            onClick={() => setActive(l.id)}
-            onKeyDown={(e) => e.key === 'Enter' && setActive(l.id)}
-          >
-            <span className="thumb">
-              {l.imageId ? <img src={`/api/images/${l.imageId}`} alt="" /> : <Icon name={l.kind === 'adjust' ? 'i-adjust' : 'i-layers'} className="ic sm" />}
-            </span>
-            <span className="nm">{l.name}</span>
-            <span className="val">{Math.round(l.opacity * 100)}%</span>
-            <button
-              className="icbtn"
-              style={{ width: 24, height: 24 }}
-              aria-label={l.visible ? '隐藏图层' : '显示图层'}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleLayer(l.id);
-              }}
+        {layers.map((l, vi) => (
+          <div key={l.id}>
+            <div
+              className={`lrow ${doc.canvas.activeLayerId === l.id ? 'on' : ''} ${l.visible ? '' : 'off'}`}
+              role="button"
+              tabIndex={0}
+              onClick={() => setActive(l.id)}
+              onKeyDown={(e) => e.key === 'Enter' && setActive(l.id)}
             >
-              <Icon name={l.visible ? 'i-eye' : 'i-eyeoff'} className="ic sm" />
-            </button>
-            {doc.canvas.layers.length > 1 && (
+              <span className="thumb">
+                {l.imageId ? <img src={`/api/images/${l.imageId}`} alt="" /> : <Icon name={l.kind === 'adjust' ? 'i-adjust' : 'i-layers'} className="ic sm" />}
+              </span>
+              <span className="nm">{l.name}</span>
+              <span className="val">{Math.round(l.opacity * 100)}%</span>
               <button
                 className="icbtn"
                 style={{ width: 24, height: 24 }}
-                aria-label="删除图层"
+                aria-label={l.visible ? '隐藏图层' : '显示图层'}
                 onClick={(e) => {
                   e.stopPropagation();
-                  removeLayer(l.id);
+                  toggleLayer(l.id);
                 }}
               >
-                <Icon name="i-x" className="ic sm" />
+                <Icon name={l.visible ? 'i-eye' : 'i-eyeoff'} className="ic sm" />
               </button>
+              {doc.canvas.layers.length > 1 && (
+                <button
+                  className="icbtn"
+                  style={{ width: 24, height: 24 }}
+                  aria-label="删除图层"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeLayer(l.id);
+                  }}
+                >
+                  <Icon name="i-x" className="ic sm" />
+                </button>
+              )}
+            </div>
+            {/* 只对选中的那一层展开控制，避免每行都挂一套控件把面板挤爆 */}
+            {doc.canvas.activeLayerId === l.id && (
+              <div className="lctl">
+                <button className="icbtn mono" style={{ width: 26, height: 26 }} aria-label="上移一层" disabled={vi === 0} onClick={() => moveLayer(l.id, 1)}>
+                  ↑
+                </button>
+                <button className="icbtn mono" style={{ width: 26, height: 26 }} aria-label="下移一层" disabled={vi === layers.length - 1} onClick={() => moveLayer(l.id, -1)}>
+                  ↓
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  value={l.opacity}
+                  aria-label="图层不透明度"
+                  style={{ flex: 1, minWidth: 60 }}
+                  onChange={(e) => setLayerOpacity(l.id, Number(e.target.value))}
+                />
+                <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)', width: 38, textAlign: 'right' }}>
+                  {Math.round(l.opacity * 100)}%
+                </span>
+              </div>
             )}
           </div>
         ))}
@@ -123,6 +161,7 @@ export function EditorPage(): ReactElement {
   const compare = useEditor((s) => s.compare);
   const setCompare = useEditor((s) => s.setCompare);
   const applyResult = useEditor((s) => s.applyResult);
+  const applyLayers = useEditor((s) => s.applyLayers);
   const setMask = useEditor((s) => s.setMask);
   const commit = useEditor((s) => s.commit);
 
@@ -131,6 +170,8 @@ export function EditorPage(): ReactElement {
   const [running, setRunning] = useState<TaskDTO | null>(null);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [dock, setDock] = useState<ToolDef | null>(null);
+  /** 小屏下侧栏是浮层，默认收起，否则 340px 会把画布永久盖住 */
+  const [sideOpen, setSideOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia('(max-width: 860px)').matches);
   const maskImageId = useRef<string | null>(null);
   const maskUrl = useRef<string | null>(null);
   /** 每笔画一个序号：只有最后一次涂画的回执才允许写回选区，避免慢响应倒序覆盖 */
@@ -179,14 +220,21 @@ export function EditorPage(): ReactElement {
     [id],
   );
 
-  // 自动保存（防抖 900ms）
+  // 自动保存（防抖 900ms）：记下发出时的 version，回包只清那一版的脏标记
+  const unsaved = useRef<{ id: string; canvas: DocCanvas } | null>(null);
   useEffect(() => {
-    if (!doc || !dirty) return;
+    if (!doc) return;
+    unsaved.current = dirty ? { id: doc.id, canvas: doc.canvas } : null;
+  }, [doc, dirty]);
+
+  useEffect(() => {
+    if (!doc || !dirty) return undefined;
+    const v = useEditor.getState().version;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       void api
         .patch<{ document: DocumentDTO }>(`/api/documents/${doc.id}`, { canvas: doc.canvas })
-        .then((r) => markSaved(r.document.updatedAt))
+        .then((r) => markSaved(r.document.updatedAt, v))
         .catch((e) => flash(errorText(e)));
     }, 900);
     return () => {
@@ -194,11 +242,27 @@ export function EditorPage(): ReactElement {
     };
   }, [doc, dirty, markSaved, flash]);
 
+  // 切文档/关页面时把最后一版尽力发出去，别让"未保存…"直接蒸发
+  useEffect(
+    () => () => {
+      const pending = unsaved.current;
+      if (!pending) return;
+      void fetch(`/api/documents/${pending.id}`, {
+        method: 'PATCH',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ canvas: pending.canvas }),
+        keepalive: true,
+      }).catch(() => undefined);
+    },
+    [],
+  );
+
   // 快捷键
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key.toLowerCase() === 'z') {
         e.preventDefault();
@@ -208,9 +272,14 @@ export function EditorPage(): ReactElement {
         e.preventDefault();
         void (async () => {
           if (!doc) return;
-          const r = await api.patch<{ document: DocumentDTO }>(`/api/documents/${doc.id}`, { canvas: doc.canvas });
-          markSaved(r.document.updatedAt);
-          flash('已保存', true);
+          const v = useEditor.getState().version;
+          try {
+            const r = await api.patch<{ document: DocumentDTO }>(`/api/documents/${doc.id}`, { canvas: doc.canvas });
+            markSaved(r.document.updatedAt, v);
+            flash('已保存', true);
+          } catch (e) {
+            flash(errorText(e));
+          }
         })();
       } else if (e.key === '[') setBrushSize(-2);
       else if (e.key === ']') setBrushSize(2);
@@ -234,9 +303,15 @@ export function EditorPage(): ReactElement {
     if (t.documentId && t.documentId !== doc?.id) return;
     if (appliedTasks.current.has(t.id)) return;
     appliedTasks.current.add(t.id);
-    applyResult(t.resultImageId, getTool(t.tool)?.title ?? t.tool);
+    const layers = splitLayerOutput(t.output);
+    if (layers) {
+      applyLayers(layers, true);
+      flash(`已拆成 ${layers.length} 层，可分别选中调整`, true);
+    } else {
+      applyResult(t.resultImageId, getTool(t.tool)?.title ?? t.tool);
+      flash(`${getTool(t.tool)?.title ?? t.tool} 完成`, true);
+    }
     void refreshImages();
-    flash(`${getTool(t.tool)?.title ?? t.tool} 完成`, true);
     if (t.costYuan) void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
   });
 
@@ -377,8 +452,18 @@ export function EditorPage(): ReactElement {
           )}
         </div>
         <div className="r">
+          <button className="btn ghost side-toggle" onClick={() => setSideOpen((v) => !v)} aria-expanded={sideOpen}>
+            {sideOpen ? '收起面板' : '面板'}
+          </button>
           <span className="chip mono">今日 {me ? `${me.quota.used}/${me.quota.limit}` : '…'}</span>
-          <button className="btn primary" onClick={() => void runClientTool('export', { format: 'png', scale: 1 })}>
+          <button
+            className="btn primary"
+            onClick={() =>
+              void runClientTool('export', { format: 'png', scale: 1 }).catch((e: unknown) =>
+                flash(e instanceof Error ? `导出失败：${e.message}` : '导出失败'),
+              )
+            }
+          >
             <Icon name="i-export" className="ic sm" />
             导出
           </button>
@@ -410,7 +495,7 @@ export function EditorPage(): ReactElement {
         <CanvasView tool={tool} onMaskChange={onMaskChange} />
 
         <Splitter value={sideW} min={260} max={560} onChange={setSideW} onReset={resetSideW} />
-        <aside className="side">
+        <aside className={sideOpen ? 'side open' : 'side'}>
           <AgentPanel documentId={doc.id} />
           <LayersPanel />
         </aside>
