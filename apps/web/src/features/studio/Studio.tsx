@@ -211,6 +211,10 @@ export function StudioPage(): ReactElement {
     void refresh();
     flash(`${e.task.title} 完成`, true);
   });
+  useEvent('task.progress', (e) => {
+    const t = e.task;
+    setTask((cur) => (cur && cur.id === t.id ? t : cur));
+  });
   useEvent('task.failed', (e) => {
     setTask(null);
     flash(e.task.error ?? '任务失败');
@@ -248,9 +252,11 @@ export function StudioPage(): ReactElement {
     }
     if (t.needsImage && !params.imageId) params.imageId = current?.id;
     if (t.needsMask) return void nav(`/editor/${await openDoc(current?.id ?? '')}`);
-    setTask({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0.06, costYuan: 0, createdAt: '' } as TaskDTO);
+    setTask({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' } as TaskDTO);
     try {
-      await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params });
+      const r = await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params });
+      // 换成服务端真实任务：进度此后只由 task.progress 事件驱动
+      setTask(r.task);
     } catch (e) {
       setTask(null);
       flash(errorText(e));
@@ -366,10 +372,10 @@ export function StudioPage(): ReactElement {
                 <div className="result-card">
                   <div className="stage-h">
                     <h3 style={{ fontSize: 13 }}>显影中</h3>
-                    <span className="hint mono">{Math.round((task?.progress ?? 0.06) * 100)}%</span>
+                    <span className="hint mono">{Math.round((task?.progress ?? 0) * 100)}%</span>
                   </div>
                   <div className="pbar">
-                    <i style={{ width: `${Math.round((task?.progress ?? 0.06) * 100)}%` }} />
+                    <i style={{ width: `${Math.round((task?.progress ?? 0) * 100)}%` }} />
                   </div>
                 </div>
               )}

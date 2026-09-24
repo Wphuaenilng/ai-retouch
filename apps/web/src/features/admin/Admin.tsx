@@ -117,15 +117,26 @@ export function AdminPage(): ReactElement {
                   {u.role === 'admin' && <span className="mono" style={{ color: 'var(--red)', marginLeft: 6 }}>admin</span>}
                 </span>
                 <span className="mono" style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                  {u.quota.used}/{u.quotaPerDay}
+                  {u.quota.used}/{u.quotaPerDay} · ¥{u.quota.costTodayYuan}
                 </span>
                 <input
                   className="input mono"
                   style={{ width: 64, padding: '4px 6px', fontSize: 11 }}
                   defaultValue={u.quotaPerDay}
                   onBlur={(e) => {
-                    const v = Number(e.target.value);
-                    if (Number.isInteger(v)) void api.patch(`/api/admin/users/${u.id}`, { quotaPerDay: v }).then(() => void load());
+                    const raw = e.target.value.trim();
+                    const v = Number(raw);
+                    // 清空或填坏都当作没改：以前这里会把配额静默写成 0
+                    if (raw === '' || !Number.isInteger(v) || v < 0 || v > 5000) {
+                      e.target.value = String(u.quotaPerDay);
+                      return;
+                    }
+                    void api
+                      .patch(`/api/admin/users/${u.id}`, { quotaPerDay: v })
+                      .then(() => load())
+                      .catch(() => {
+                        e.target.value = String(u.quotaPerDay);
+                      });
                   }}
                 />
               </div>

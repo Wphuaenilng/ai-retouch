@@ -1,6 +1,6 @@
 /**
  * 端到端冒烟：管理员 → 邀请码 → 注册 → 上传 → 文档 → 任务（含 SSE 事件）→ 结果下载
- * → Agent 多步计划 → 配额扣减 → 错误码稳定性。
+ * → 遮罩单独上传 + 选区消除 → 跨用户隔离 → Agent 多步计划 → 配额扣减 → 错误码稳定性。
  *
  * 前提：服务已启动，且 .env 里配了 BOOTSTRAP_ADMIN_USERNAME / BOOTSTRAP_ADMIN_PASSWORD。
  *   pnpm --filter @retouch/server dev
@@ -50,6 +50,16 @@ async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 const data = <T>(r: { data: T }): T => r.data;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** 另开一个会话用（不碰全局 cookie），用来验证跨用户隔离 */
+async function rawLogin(username: string, password: string): Promise<string> {
+  const res = await fetch(`${BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return (res.headers.get('set-cookie') ?? '').split(';')[0];
+}
 
 interface TaskDto {
   id: string;
@@ -203,8 +213,40 @@ async function main(): Promise<void> {
   const bytes = Buffer.from(await imgRes.arrayBuffer());
   check('结果图可下载', imgRes.ok && bytes.length > 1000, `${Math.round(bytes.length / 1024)}KB`);
 
-  const otherUser = await fetch(`${BASE}/api/images/${done.resultImageId}`).then((r) => r.status);
-  check('越权访问他人图片被拒', otherUser === 401 || otherUser === 403 || otherUser === 404, `HTTP ${otherUser}`);
+  // —— 遮罩链路：画布涂完选区后只有 mask 可传，随后要能直接喂给消除任务
+  const mfd = new FormData();
+  mfd.append('mask', new Blob([new Uint8Array(IMAGE_BUF)], { type: 'image/png' }), 'mask.png');
+  const maskUp = data(await api<{ data: { mask: { id: string } } }>('/api/uploads', { method: 'POST', body: mfd }));
+  check('遮罩可单独上传（不带原图）', Boolean(maskUp.mask.id));
+
+  const eraseTask = data(await api<{ data: { task: { id: string } } }>('/api/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ tool: 'erase', params: { imageId: up.original.id, maskImageId: maskUp.mask.id }, documentId: doc.document.id }),
+  }));
+  const erased = await waitTask(eraseTask.task.id);
+  check('选区直连消除出图', Boolean(erased.resultImageId), `${erased.provider}/${erased.model}`);
+
+  // —— 跨用户隔离：第二个账号取别人的图必须被拒（以前的用例不带 cookie，只证明了未登录被拒）
+  const userCookie = cookie;
+  const adminCookie = await rawLogin(ADMIN_USER, ADMIN_PASS);
+  const inv2Res = await fetch(`${BASE}/api/admin/invites`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie: adminCookie },
+    body: JSON.stringify({ count: 1 }),
+  });
+  const inv2 = (await inv2Res.json()) as { data?: { codes?: string[] } };
+  const code2 = inv2.data?.codes?.[0] ?? '';
+  const regB = await fetch(`${BASE}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ inviteCode: code2, username: `smoke_b_${Date.now().toString(36)}`, password: 'smoke-password-123' }),
+  });
+  const bCookie = (regB.headers.get('set-cookie') ?? '').split(';')[0];
+  const cross = await fetch(`${BASE}/api/images/${up.original.id}`, { headers: { cookie: bCookie } });
+  check('跨用户取他人图片被拒（403）', cross.status === 403, `HTTP ${cross.status}`);
+  const noAuth = await fetch(`${BASE}/api/images/${up.original.id}`);
+  check('未登录取图片被拒（401）', noAuth.status === 401, `HTTP ${noAuth.status}`);
+  cookie = userCookie;
 
   const plan = data(await api<{ data: { plan: { id: string; steps: { tool: string }[] } } }>('/api/agent/plans', {
     method: 'POST',

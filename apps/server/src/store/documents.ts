@@ -1,5 +1,6 @@
 import { docCanvasSchema, type DocCanvas } from '@retouch/shared';
 import { all, db, nowIso, run } from '../db/index';
+import { err } from '../lib/errors';
 import { newDocId } from '../lib/ids';
 
 export interface DocumentRow {
@@ -13,13 +14,32 @@ export interface DocumentRow {
   updated_at: string;
 }
 
+/** 画布与标题都来自客户端：非法一律 400，不能让 zod / TypeError 冒成 500 */
+function canvasOf(value: unknown): DocCanvas {
+  const r = docCanvasSchema.safeParse(value);
+  if (!r.success) {
+    throw err(
+      'BAD_REQUEST',
+      `画布数据不合法：${r.error.issues.map((i) => `${i.path.join('.') || 'canvas'}: ${i.message}`).join('；')}`,
+      r.error.issues,
+    );
+  }
+  return r.data;
+}
+
+function titleOf(value: unknown): string {
+  if (value === undefined || value === null) return '未命名';
+  if (typeof value !== 'string') throw err('BAD_REQUEST', 'title 需要是字符串');
+  return value.trim().slice(0, 60) || '未命名';
+}
+
 export function insertDocument(input: {
   userId: string;
-  title: string;
+  title: unknown;
   canvas: unknown;
   sourceImageId?: string | null;
 }): DocumentRow {
-  const canvas = docCanvasSchema.parse(input.canvas);
+  const canvas = canvasOf(input.canvas);
   const id = newDocId();
   const now = nowIso();
   run(
@@ -27,7 +47,7 @@ export function insertDocument(input: {
      VALUES (?, ?, ?, ?, ?, NULL, ?, ?)`,
     id,
     input.userId,
-    input.title.slice(0, 60) || '未命名',
+    titleOf(input.title),
     JSON.stringify(canvas),
     input.sourceImageId ?? null,
     now,
@@ -47,17 +67,17 @@ export function listDocuments(userId: string, limit = 50): DocumentRow[] {
 export function updateDocument(
   id: string,
   userId: string,
-  patch: { title?: string; canvas?: unknown; thumbImageId?: string | null },
+  patch: { title?: unknown; canvas?: unknown; thumbImageId?: string | null },
 ): DocumentRow | undefined {
   const sets: string[] = [];
   const args: unknown[] = [];
   if (patch.title !== undefined) {
     sets.push('title = ?');
-    args.push(patch.title.slice(0, 60) || '未命名');
+    args.push(titleOf(patch.title));
   }
   if (patch.canvas !== undefined) {
     sets.push('canvas = ?');
-    args.push(JSON.stringify(docCanvasSchema.parse(patch.canvas)));
+    args.push(JSON.stringify(canvasOf(patch.canvas)));
   }
   if (patch.thumbImageId !== undefined) {
     sets.push('thumb_image_id = ?');

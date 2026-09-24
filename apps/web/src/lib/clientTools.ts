@@ -1,5 +1,5 @@
 import Konva from 'konva';
-import { getStageHandle, useEditor } from '../state/editor';
+import { getArtHandle, useEditor } from '../state/editor';
 import { downloadBlobUrl } from './image';
 
 type FilterProps = { filters: unknown[]; props: Record<string, number> };
@@ -111,24 +111,34 @@ export async function runClientTool(tool: string, params: Record<string, unknown
   }
 
   if (tool === 'export') {
-    const stage = getStageHandle();
-    if (!stage) throw new Error('画布还没准备好');
+    const art = getArtHandle();
+    if (!art) throw new Error('画布还没准备好');
+    const doc = useEditor.getState().doc;
+    if (!doc) throw new Error('没有可导出的文档');
     const format = str(params.format) ?? 'png';
     const scale = num(params.scale, 1) || 1;
     const mimeType = `image/${format === 'jpeg' ? 'jpeg' : format}`;
-    // 导出必须回到 1:1：否则会把当前缩放和四周留白一起导出去
-    const prevPos = { x: stage.x(), y: stage.y() };
-    const prevScale = { x: stage.scaleX(), y: stage.scaleY() };
-    stage.scale({ x: 1, y: 1 });
-    stage.position({ x: 0, y: 0 });
-    stage.batchDraw();
+    const { width, height } = doc.canvas;
+    // 视口缩放与平移挂在这个 Group 上：导出要的是作品本身，所以临时回到 1:1 与原点对齐
+    const prev = { x: art.x(), y: art.y(), sx: art.scaleX(), sy: art.scaleY() };
+    art.position({ x: 0, y: 0 });
+    art.scale({ x: 1, y: 1 });
+    art.getLayer()?.batchDraw();
     let url = '';
     try {
-      url = stage.toDataURL({ pixelRatio: scale, mimeType, quality: num(params.quality, 0.92) });
+      url = art.toDataURL({
+        x: 0,
+        y: 0,
+        width,
+        height,
+        pixelRatio: scale,
+        mimeType,
+        quality: num(params.quality, 0.92),
+      });
     } finally {
-      stage.scale(prevScale);
-      stage.position(prevPos);
-      stage.batchDraw();
+      art.position({ x: prev.x, y: prev.y });
+      art.scale({ x: prev.sx, y: prev.sy });
+      art.getLayer()?.batchDraw();
     }
     downloadBlobUrl(url, `retouch-${Date.now()}.${format === 'jpeg' ? 'jpg' : format}`);
     return;

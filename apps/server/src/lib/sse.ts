@@ -46,12 +46,12 @@ class Hub {
     this.startHeartbeat();
 
     raw.write(`retry: 3000\n\n`);
+    // 只有断线重连才带 Last-Event-ID，此时从环形缓冲补齐错过的事件。
+    // 首连不重放：把历史 task.succeeded 推给刚打开的页面，会被前端当成新结果写进当前文档。
     const list = this.ring.get(userId) ?? [];
     const from = Number(lastEventId ?? '0');
     if (Number.isFinite(from) && from > 0) {
       for (const e of list) if (Number(e.id) > from) this.writeFrame(sub, e.id, e.data);
-    } else {
-      for (const e of list.slice(-20)) this.writeFrame(sub, e.id, e.data);
     }
 
     return () => {

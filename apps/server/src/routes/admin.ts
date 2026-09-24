@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { config } from '../config';
+import { err } from '../lib/errors';
 import { providerStatus } from '../providers/registry';
 import { getQuota } from '../services/quota';
 import { globalCostToday } from '../store/usage';
@@ -52,7 +53,7 @@ export function adminRoutes(app: FastifyInstance): void {
     const body = (req.body ?? {}) as { quotaPerDay?: number };
     const q = Number(body.quotaPerDay);
     if (!Number.isInteger(q) || q < 0 || q > 5000) {
-      return { ok: false as const, error: { code: 'BAD_REQUEST' as const, message: 'quotaPerDay 需要是 0-5000 的整数' } };
+      throw err('BAD_REQUEST', 'quotaPerDay 需要是 0-5000 的整数');
     }
     updateUserQuota(p(req).id, q);
     return { ok: true, data: { updated: true } };

@@ -3,7 +3,7 @@ import { Image as KImage, Group as KGroup, Layer as KLayer, Rect as KRect, Stage
 import type Konva from 'konva';
 import type { DocLayer } from '@retouch/shared';
 import { filterPropsFor } from '../../lib/clientTools';
-import { setStageHandle, useEditor, type Viewport } from '../../state/editor';
+import { setArtHandle, useEditor, type Viewport } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
 
 const cache = new Map<string, HTMLImageElement>();
@@ -68,6 +68,7 @@ function MaskLayer({
   active,
   space,
   size,
+  clearToken,
   onExport,
 }: {
   width: number;
@@ -76,10 +77,17 @@ function MaskLayer({
   active: boolean;
   space: boolean;
   size: number;
+  clearToken: number;
   onExport: (canvas: HTMLCanvasElement | null) => void;
 }): ReactElement {
   const ref = useRef<HTMLCanvasElement>(null);
   const drawing = useRef<{ x: number; y: number } | null>(null);
+
+  // × 清空必须真的擦掉像素，否则涂痕还留在画布上、只是不再上传
+  useEffect(() => {
+    const el = ref.current;
+    el?.getContext('2d')?.clearRect(0, 0, el.width, el.height);
+  }, [clearToken]);
 
   // 按住空格或中键时让给画布平移
   const painting = (): boolean => active && !space;
@@ -234,14 +242,16 @@ export function CanvasView({
   const compare = useEditor((s) => s.compare);
   const wrapRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
+  const artRef = useRef<Konva.Group>(null);
   const [box, setBox] = useState({ w: 0, h: 0 });
   const [space, setSpace] = useState(false);
   const [grab, setGrab] = useState(false);
+  const [maskClear, setMaskClear] = useState(0);
   const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
 
   useEffect(() => {
-    setStageHandle(stageRef.current);
-    return () => setStageHandle(null);
+    setArtHandle(artRef.current);
+    return () => setArtHandle(null);
   }, []);
 
   useEffect(() => {
@@ -373,7 +383,7 @@ export function CanvasView({
       {/* Stage 铺满 .cv，位移和缩放交给 Group：Konva 把 Stage 的 x/y 写成容器 padding，图片会被裁没 */}
       <Stage ref={stageRef} width={Math.max(1, box.w)} height={Math.max(1, box.h)}>
         <KLayer listening={false}>
-          <KGroup x={art.left} y={art.top} scaleX={scale} scaleY={scale}>
+          <KGroup ref={artRef} x={art.left} y={art.top} scaleX={scale} scaleY={scale}>
             {canvas.layers.map((l) => (
               <LayerNode key={l.id} layer={l} />
             ))}
@@ -398,6 +408,7 @@ export function CanvasView({
         active={tool === 'brush'}
         space={space}
         size={brushSize}
+        clearToken={maskClear}
         onExport={onMaskChange}
       />
 
@@ -440,6 +451,7 @@ export function CanvasView({
               className="icbtn"
               title="清空选区"
               onClick={() => {
+                setMaskClear((n) => n + 1);
                 onMaskChange(null);
               }}
             >

@@ -153,9 +153,9 @@ export const useEditor = create<EditorState>((set, get) => ({
     }),
 }));
 
-/** Konva Stage 句柄由 CanvasView 注册，导出与截图要用 */
-let stageHandle: Konva.Stage | null = null;
-export const setStageHandle = (s: Konva.Stage | null): void => {
-  stageHandle = s;
+/** 作品 Group 的句柄由 CanvasView 注册：视口缩放平移挂在这个节点上，导出要认它、而不是 Stage 视口 */
+let artHandle: Konva.Group | null = null;
+export const setArtHandle = (g: Konva.Group | null): void => {
+  artHandle = g;
 };
-export const getStageHandle = (): Konva.Stage | null => stageHandle;
+export const getArtHandle = (): Konva.Group | null => artHandle;

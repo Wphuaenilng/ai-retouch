@@ -88,16 +88,24 @@ export function AgentPanel({ documentId }: { documentId: string }): ReactElement
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  /** SSE 是按用户广播的：本面板只认属于当前文档的计划和只执行一次的指令 */
+  const seenCommands = useRef(new Set<string>());
 
-  const upsert = useCallback((p: PlanDTO) => {
-    setPlans((list) => (list.some((x) => x.id === p.id) ? list.map((x) => (x.id === p.id ? p : x)) : [...list, p]));
-  }, []);
+  const upsert = useCallback(
+    (p: PlanDTO) => {
+      if (p.documentId !== documentId) return;
+      setPlans((list) => (list.some((x) => x.id === p.id) ? list.map((x) => (x.id === p.id ? p : x)) : [...list, p]));
+    },
+    [documentId],
+  );
 
   useEvent('plan.created', (e) => upsert(e.plan));
   useEvent('plan.updated', (e) => upsert(e.plan));
 
   // Agent 下发的本地步骤：执行后回执，服务端才继续往下走
   useEvent('agent.client_command', async (e) => {
+    if (seenCommands.current.has(e.requestId)) return;
+    seenCommands.current.add(e.requestId);
     try {
       await runClientTool(e.tool, e.params);
       await api.post('/api/agent/receipt', { requestId: e.requestId, ok: true });

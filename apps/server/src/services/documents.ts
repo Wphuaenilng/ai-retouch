@@ -20,11 +20,11 @@ export function requireDoc(id: string, userId: string): DocumentRow {
   return row;
 }
 
-export function createDocument(userId: string, input: { title?: string; imageId: string; canvas?: DocCanvas }): DocumentDTO {
+export function createDocument(userId: string, input: { title?: unknown; imageId: string; canvas?: DocCanvas }): DocumentDTO {
   const image = requireOwned(input.imageId, userId);
   const canvas = input.canvas ?? baseCanvas(image.width, image.height, image.id);
   return toDTO(
-    insertDocument({ userId, title: input.title?.trim() || '未命名', canvas, sourceImageId: image.id }),
+    insertDocument({ userId, title: input.title, canvas, sourceImageId: image.id }),
   );
 }
 
@@ -44,11 +44,20 @@ export function getDoc(id: string, userId: string): DocumentDTO {
 export function patchDoc(
   id: string,
   userId: string,
-  patch: { title?: string; canvas?: DocCanvas; thumbImageId?: string | null },
+  patch: { title?: unknown; canvas?: unknown; thumbImageId?: unknown },
 ): DocumentDTO {
-  const row = updateDocument(id, userId, patch);
+  const row = updateDocument(id, userId, { ...patch, thumbImageId: checkedThumb(patch.thumbImageId, userId) });
   if (!row) throw err('NOT_FOUND', `文档 ${id} 不存在`);
   return toDTO(row);
+}
+
+/** 封面必须是本人的一张图，否则就是往自己文档上挂别人的图片 id */
+function checkedThumb(value: unknown, userId: string): string | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== 'string') throw err('BAD_REQUEST', 'thumbImageId 需要是字符串或 null');
+  requireOwned(value, userId);
+  return value;
 }
 
 export function removeDoc(id: string, userId: string): void {

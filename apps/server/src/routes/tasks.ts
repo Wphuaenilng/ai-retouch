@@ -6,8 +6,10 @@ import { providerStatus } from '../providers/registry';
 import { cancelTask, listUserTasks, requireTask, retryTask, submitTask, toTaskDTO } from '../services/tasks';
 import { findTask } from '../store/tasks';
 import { p, limit, requireUser } from './_http';
+import { intParam } from '../lib/parse';
 
 const TERMINAL: TaskStatus[] = ['succeeded', 'failed', 'canceled'];
+const STATUSES: TaskStatus[] = ['queued', 'running', ...TERMINAL];
 
 export function taskRoutes(app: FastifyInstance): void {
   app.post('/api/tasks', async (req) => {
@@ -32,8 +34,14 @@ export function taskRoutes(app: FastifyInstance): void {
   app.get('/api/tasks', async (req) => {
     const s = requireUser(req);
     const q = req.query as { status?: string; limit?: string; cursor?: string };
-    const status = q.status ? (q.status.split(',').filter(Boolean) as TaskStatus[]) : undefined;
-    return { ok: true, data: { tasks: listUserTasks(s.sub, { status, limit: Number(q.limit ?? 30), before: q.cursor }) } };
+    const wanted = q.status?.split(',').filter(Boolean) ?? [];
+    const bad = wanted.filter((x) => !STATUSES.includes(x as TaskStatus));
+    if (bad.length) throw err('BAD_REQUEST', `没有这种任务状态：${bad.join('、')}（可选 ${STATUSES.join('、')}）`);
+    const status = wanted.length ? (wanted as TaskStatus[]) : undefined;
+    return {
+      ok: true,
+      data: { tasks: listUserTasks(s.sub, { status, limit: intParam(q.limit, { name: 'limit', default: 30, max: 200 }), before: q.cursor }) },
+    };
   });
 
   app.get('/api/tasks/active', async (req) => {

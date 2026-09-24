@@ -47,13 +47,27 @@ export function findImage(id: string): ImageRow | undefined {
   return db.prepare('SELECT * FROM images WHERE id = ?').get(id) as ImageRow | undefined;
 }
 
-export function listImages(userId: string, opts: { kinds?: string[]; limit?: number } = {}): ImageRow[] {
+export function listImages(
+  userId: string,
+  opts: { kinds?: string[]; limit?: number; documentId?: string } = {},
+): ImageRow[] {
   const limit = Math.min(opts.limit ?? 60, 200);
+  const where = ['user_id = ?'];
+  const args: unknown[] = [userId];
   if (opts.kinds?.length) {
-    const marks = opts.kinds.map(() => '?').join(',');
-    return all<ImageRow>(`SELECT * FROM images WHERE user_id = ? AND kind IN (${marks}) ORDER BY created_at DESC LIMIT ?`, userId, ...opts.kinds, limit);
+    where.push(`kind IN (${opts.kinds.map(() => '?').join(',')})`);
+    args.push(...opts.kinds);
   }
-  return all<ImageRow>('SELECT * FROM images WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', userId, limit);
+  if (opts.documentId) {
+    // 接触印样要按项目取：本项目的任务产物 + 该文档的来源图与封面
+    where.push(
+      `(parent_task_id IN (SELECT id FROM tasks WHERE document_id = ?)
+        OR id IN (SELECT source_image_id FROM documents WHERE id = ?
+                  UNION SELECT thumb_image_id FROM documents WHERE id = ?))`,
+    );
+    args.push(opts.documentId, opts.documentId, opts.documentId);
+  }
+  return all<ImageRow>(`SELECT * FROM images WHERE ${where.join(' AND ')} ORDER BY created_at DESC LIMIT ?`, ...args, limit);
 }
 
 export function deleteImage(id: string, userId: string): void {

@@ -5,10 +5,19 @@ import { assertImageSafe } from '../services/moderation';
 import { limit, requireUser } from './_http';
 
 type Kind = 'original' | 'edit' | 'thumb' | 'mask';
-const KINDS = new Set<Kind>(['original', 'edit', 'thumb', 'mask']);
+
+/** 字段名 → 图片用途；同一用途只取先命中的字段 */
+const ORDER: Array<[string, Kind]> = [
+  ['file', 'original'],
+  ['original', 'original'],
+  ['edit', 'edit'],
+  ['thumb', 'thumb'],
+  ['mask', 'mask'],
+];
 
 /**
- * 上传：一次请求可带 file（原图，必填）+ edit（前端压缩过的编辑副本）+ thumb。
+ * 上传：一次请求可带 file（原图）+ edit（前端压缩过的编辑副本）+ thumb + mask（画布选区）。
+ * 只送 mask 也是合法请求——在画布上涂一片选区时并没有新图要传。
  * 服务端不做像素处理，所以"压缩"这件事必须在浏览器完成；
  * 这里只负责校验类型/尺寸、落盘、建记录、过审核。
  */
@@ -24,25 +33,19 @@ export function uploadRoutes(app: FastifyInstance): void {
       const buf = await part.toBuffer();
       files[part.fieldname] = { buf, mime: part.mimetype };
     }
-    if (!files.file && !files.original) throw err('BAD_REQUEST', '没有收到图片文件（字段名应为 file）');
+    // 遮罩可以单独上传：画布上涂一片选区时，用户手上并没有"原图"要传
+    if (!ORDER.some(([field]) => files[field])) throw err('BAD_REQUEST', '没有收到可识别的图片字段（file / mask / edit / thumb）');
+    const wantsOriginal = Boolean(files.file ?? files.original);
 
     const out: Record<string, ReturnType<typeof toDTO>> = {};
-    const order: Array<[string, Kind]> = [
-      ['file', 'original'],
-      ['original', 'original'],
-      ['edit', 'edit'],
-      ['thumb', 'thumb'],
-      ['mask', 'mask'],
-    ];
-    for (const [field, kind] of order) {
+    for (const [field, kind] of ORDER) {
       const f = files[field];
-      if (!f || !KINDS.has(kind)) continue;
-      if (out[kind] && kind !== 'original') continue;
+      if (!f || out[kind]) continue;
       const row = await saveImage({ userId: s.sub, kind, buf: f.buf });
       await assertImageSafe(row, 'upload');
       out[kind] = toDTO(row);
     }
-    if (!out.original) throw err('FILE_TYPE_UNSUPPORTED', '没有收到有效的图片');
+    if (wantsOriginal && !out.original) throw err('FILE_TYPE_UNSUPPORTED', '没有收到有效的图片');
     return { ok: true, data: out };
   });
 }

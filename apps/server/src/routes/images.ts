@@ -3,6 +3,7 @@ import { err } from '../lib/errors';
 import { mimeOfPath } from '../lib/storage';
 import { verifySignedImage } from '../lib/signurl';
 import { loadBuffer, toDTO } from '../services/images';
+import { intParam } from '../lib/parse';
 import { findImage } from '../store/images';
 import { listImages } from '../store/images';
 import { p, requireUser } from './_http';
@@ -35,9 +36,13 @@ export function imageRoutes(app: FastifyInstance): void {
 
   app.get('/api/images', async (req) => {
     const s = requireUser(req);
-    const q = req.query as { kinds?: string; limit?: string };
+    const q = req.query as { kinds?: string; limit?: string; documentId?: string };
     const kinds = q.kinds?.split(',').filter(Boolean);
-    const rows = listImages(s.sub, { kinds, limit: Number(q.limit ?? 60) });
+    const rows = listImages(s.sub, {
+      kinds,
+      documentId: q.documentId,
+      limit: intParam(q.limit, { name: 'limit', default: 60, max: 200 }),
+    });
     return { ok: true, data: { images: rows.map(toDTO) } };
   });
 }

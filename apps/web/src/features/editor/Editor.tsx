@@ -4,7 +4,7 @@ import { getTool, visibleTools, type DocumentDTO, type ImageDTO, type MeDTO, typ
 import { api, errorText } from '../../lib/api';
 import { runClientTool } from '../../lib/clientTools';
 import { canvasToBlob } from '../../lib/image';
-import { useEvent } from '../../lib/sse';
+import { useEvent, onSseOpen } from '../../lib/sse';
 import { useEditor } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
 import { Splitter, useColWidth } from '../../ui/Splitter';
@@ -132,6 +132,10 @@ export function EditorPage(): ReactElement {
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [dock, setDock] = useState<ToolDef | null>(null);
   const maskImageId = useRef<string | null>(null);
+  const maskUrl = useRef<string | null>(null);
+  /** 每笔画一个序号：只有最后一次涂画的回执才允许写回选区，避免慢响应倒序覆盖 */
+  const maskSeq = useRef(0);
+  const [hasSelection, setHasSelection] = useState(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sideW, setSideW, resetSideW] = useColWidth('editor.sideW', 340, 260, 560);
 
@@ -140,10 +144,10 @@ export function EditorPage(): ReactElement {
     setTimeout(() => setToast(null), 4200);
   }, []);
 
-  const refreshImages = useCallback(async (): Promise<void> => {
-    const r = await api.get<{ images: ImageDTO[] }>('/api/images?kinds=result,original&limit=12').catch(() => null);
+    const refreshImages = useCallback(async (): Promise<void> => {
+    const r = await api.get<{ images: ImageDTO[] }>(`/api/images?kinds=result,original&limit=12&documentId=${id ?? ''}`).catch(() => null);
     if (r) setImages(r.images.slice(0, 12));
-  }, []);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -159,6 +163,21 @@ export function EditorPage(): ReactElement {
     void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
     void refreshImages();
   }, [id, setDoc, nav, flash, refreshImages]);
+
+  // SSE 每次建立或重连都主动拉一次进行中任务：断线期间错过的终态事件靠这里兜住
+  useEffect(
+    () =>
+      onSseOpen(() => {
+        void api
+          .get<{ tasks: TaskDTO[] }>('/api/tasks/active')
+          .then((r) => {
+            const mine = r.tasks.find((x) => x.documentId === id);
+            if (mine) setRunning((cur) => cur ?? mine);
+          })
+          .catch(() => undefined);
+      }),
+    [id],
+  );
 
   // 自动保存（防抖 900ms）
   useEffect(() => {
@@ -193,8 +212,8 @@ export function EditorPage(): ReactElement {
           markSaved(r.document.updatedAt);
           flash('已保存', true);
         })();
-      } else if (e.key === '[') setBrushSize(2);
-      else if (e.key === ']') setBrushSize(-2);
+      } else if (e.key === '[') setBrushSize(-2);
+      else if (e.key === ']') setBrushSize(2);
       else if (e.key === '\\') setCompare(!useEditor.getState().compare);
     };
     const setBrushSize = (d: number): void => {
@@ -205,18 +224,25 @@ export function EditorPage(): ReactElement {
     return () => window.removeEventListener('keydown', onKey);
   }, [undo, redo, doc, markSaved, flash, setCompare]);
 
+  const appliedTasks = useRef(new Set<string>());
+
   useEvent('task.succeeded', (e) => {
     const t = e.task;
     setRunning(null);
     if (!t.resultImageId) return;
-    if (t.tool === 'split_layers') {
-      const out = (t as unknown as { output?: never }).output;
-      void out;
-    }
+    // 断线重放与重复推送都可能到达：只认属于当前文档、且本页还没应用过的任务
+    if (t.documentId && t.documentId !== doc?.id) return;
+    if (appliedTasks.current.has(t.id)) return;
+    appliedTasks.current.add(t.id);
     applyResult(t.resultImageId, getTool(t.tool)?.title ?? t.tool);
     void refreshImages();
     flash(`${getTool(t.tool)?.title ?? t.tool} 完成`, true);
     if (t.costYuan) void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
+  });
+
+  useEvent('task.progress', (e) => {
+    const t = e.task;
+    setRunning((cur) => (cur && cur.id === t.id ? t : cur));
   });
 
   useEvent('task.failed', (e) => {
@@ -228,27 +254,44 @@ export function EditorPage(): ReactElement {
 
   const onMaskChange = useCallback(
     (canvas: HTMLCanvasElement | null): void => {
+      const seq = (maskSeq.current += 1);
       if (!canvas) {
         maskImageId.current = null;
+        setHasSelection(false);
+        if (maskUrl.current) URL.revokeObjectURL(maskUrl.current);
+        maskUrl.current = null;
         setMask(null);
         return;
       }
       void (async () => {
         const blob = await canvasToBlob(canvas, 'image/png');
-        setMask(blob ? URL.createObjectURL(blob) : null);
+        if (seq !== maskSeq.current) return;
+        if (maskUrl.current) URL.revokeObjectURL(maskUrl.current);
+        maskUrl.current = blob ? URL.createObjectURL(blob) : null;
+        setMask(maskUrl.current);
+        if (!blob) return;
         const form = new FormData();
         form.append('mask', blob, 'mask.png');
         try {
           const r = await api.form<{ mask: ImageDTO }>('/api/uploads', form);
+          if (seq !== maskSeq.current) return;
           maskImageId.current = r.mask.id;
+          setHasSelection(true);
           commit((c) => ({ ...c, selection: { kind: 'brush', maskImageId: r.mask.id } }));
           flash('选区已就绪，可以执行消除或局部替换', true);
         } catch (e) {
-          flash(errorText(e));
+          if (seq === maskSeq.current) flash(errorText(e));
         }
       })();
     },
     [setMask, commit, flash],
+  );
+
+  useEffect(
+    () => () => {
+      if (maskUrl.current) URL.revokeObjectURL(maskUrl.current);
+    },
+    [],
   );
 
   const runTool = useCallback(
@@ -270,7 +313,9 @@ export function EditorPage(): ReactElement {
       if (t.needsMask && !full.maskImageId) full.maskImageId = maskImageId.current;
       setRunning({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' } as TaskDTO);
       try {
-        await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params: full, documentId: doc?.id });
+        const r = await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params: full, documentId: doc?.id });
+        // 换成服务端真实任务：进度此后只由 task.progress 事件驱动
+        setRunning(r.task);
       } catch (e) {
         setRunning(null);
         flash(errorText(e));
@@ -288,7 +333,6 @@ export function EditorPage(): ReactElement {
 
   const dockTool = dock;
   const hasImage = useMemo(() => Boolean(doc?.canvas.layers.some((l) => l.imageId)), [doc]);
-  const hasSelection = Boolean(maskImageId.current);
 
   if (!doc) {
     return (
@@ -327,7 +371,7 @@ export function EditorPage(): ReactElement {
                 {running.title}
               </span>
               <span className="pbar" style={{ width: 90 }}>
-                <i style={{ width: `${Math.round((running.progress || 0.08) * 100)}%` }} />
+                <i style={{ width: `${Math.round(running.progress * 100)}%` }} />
               </span>
             </span>
           )}

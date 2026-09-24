@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import multipart from '@fastify/multipart';
 import { extname, join, resolve, sep } from 'node:path';
 import { config, ROOT } from './config';
+import { decodeParam } from './lib/parse';
 import { AppError, err, normalizeError } from './lib/errors';
 import { agentRoutes } from './routes/agent';
 import { adminRoutes } from './routes/admin';
@@ -113,7 +114,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   if (existsSync(WEB_DIST) && statSync(WEB_DIST).isDirectory()) {
     app.get('/*', async (req, reply) => {
       if (req.url.startsWith('/api/')) throw err('NOT_FOUND', '接口不存在');
-      const rel = decodeURIComponent(req.url.split('?')[0]);
+      const rel = decodeParam(req.url.split('?')[0]);
       const candidate = resolve(WEB_DIST, '.' + (rel === '/' ? '/index.html' : rel));
       if (candidate !== WEB_DIST && !candidate.startsWith(WEB_DIST + sep)) throw err('FORBIDDEN', '非法路径');
       if (existsSync(candidate) && statSync(candidate).isFile()) {
