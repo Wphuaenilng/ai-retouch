@@ -53,9 +53,7 @@ export async function runClientTool(tool: string, params: Record<string, unknown
     const targetId = str(params.layerId) ?? ed.doc.canvas.activeLayerId ?? ed.doc.canvas.layers.at(-1)?.id;
     ed.commit((c) => ({
       ...c,
-      layers: c.layers.map((l) =>
-        l.id === targetId ? { ...l, adjust: { ...(l.adjust ?? {}), ...values } } : l,
-      ),
+      layers: c.layers.map((l) => (l.id === targetId ? { ...l, adjust: { ...(l.adjust ?? {}), ...values } } : l)),
       activeLayerId: targetId ?? c.activeLayerId,
     }));
     return;

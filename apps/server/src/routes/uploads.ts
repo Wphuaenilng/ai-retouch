@@ -41,7 +41,8 @@ export function uploadRoutes(app: FastifyInstance): void {
       files[part.fieldname] = { buf, mime: part.mimetype };
     }
     // 遮罩可以单独上传：画布上涂一片选区时，用户手上并没有"原图"要传
-    if (!ORDER.some(([field]) => files[field])) throw err('BAD_REQUEST', '没有收到可识别的图片字段（file / mask / edit / thumb）');
+    if (!ORDER.some(([field]) => files[field]))
+      throw err('BAD_REQUEST', '没有收到可识别的图片字段（file / mask / edit / thumb）');
     const wantsOriginal = Boolean(files.file ?? files.original);
 
     const out: Record<string, ReturnType<typeof toDTO>> = {};

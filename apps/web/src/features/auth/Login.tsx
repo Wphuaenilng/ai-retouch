@@ -57,7 +57,13 @@ export function LoginPage(): ReactElement {
         {mode === 'register' && (
           <div className="field">
             <label>邀请码</label>
-            <input className="input" value={invite} onChange={(e) => setInvite(e.target.value.toUpperCase())} placeholder="找管理员要一个" autoComplete="off" />
+            <input
+              className="input"
+              value={invite}
+              onChange={(e) => setInvite(e.target.value.toUpperCase())}
+              placeholder="找管理员要一个"
+              autoComplete="off"
+            />
           </div>
         )}
         <div className="field">
@@ -66,7 +72,13 @@ export function LoginPage(): ReactElement {
         </div>
         <div className="field">
           <label>密码</label>
-          <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
+          <input
+            className="input"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          />
           {mode === 'register' && <span className="hint">至少 8 位</span>}
         </div>
 

@@ -9,9 +9,7 @@ export interface UsageRow {
 }
 
 export function getUsage(userId: string, date = today()): UsageRow {
-  const row = db.prepare('SELECT * FROM usage_daily WHERE user_id = ? AND date = ?').get(userId, date) as
-    | UsageRow
-    | undefined;
+  const row = db.prepare('SELECT * FROM usage_daily WHERE user_id = ? AND date = ?').get(userId, date) as UsageRow | undefined;
   return row ?? { user_id: userId, date, ai_calls: 0, cost_yuan: 0 };
 }
 

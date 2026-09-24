@@ -9,15 +9,7 @@ import { z } from 'zod';
  * ------------------------------------------------------------------ */
 
 /** Provider 需要实现的能力标签 */
-export type Capability =
-  | 'text2image'
-  | 'edit'
-  | 'inpaint'
-  | 'outpaint'
-  | 'upscale'
-  | 'segment'
-  | 'portrait'
-  | 'textRender';
+export type Capability = 'text2image' | 'edit' | 'inpaint' | 'outpaint' | 'upscale' | 'segment' | 'portrait' | 'textRender';
 
 export type TaskStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
 

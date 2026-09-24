@@ -42,10 +42,7 @@ describe('计划校验器', () => {
   });
 
   it('参数越界被 zod 拒绝', () => {
-    const r = validatePlan(
-      { steps: [{ id: 's1', tool: 'adjust', params: { brightness: 9 }, deps: [] }] },
-      facts,
-    );
+    const r = validatePlan({ steps: [{ id: 's1', tool: 'adjust', params: { brightness: 9 }, deps: [] }] }, facts);
     assert.equal(r.ok, false);
     if (!r.ok) assert.match(r.errors.join(), /brightness/);
   });
@@ -76,7 +73,10 @@ describe('计划校验器', () => {
     );
     assert.equal(r.ok, true);
     if (r.ok) {
-      assert.deepEqual(r.steps.map((s) => s.tool), ['cutout', 'adjust']);
+      assert.deepEqual(
+        r.steps.map((s) => s.tool),
+        ['cutout', 'adjust'],
+      );
       assert.deepEqual(r.steps[1]!.deps, [0]);
     }
   });

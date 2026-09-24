@@ -28,12 +28,19 @@ export function seed(): { adminCreated: boolean; invites: string[] } {
 
   const invites: string[] = [];
   const wanted = config.BOOTSTRAP_INVITE_CODE
-    ? config.BOOTSTRAP_INVITE_CODE.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean)
+    ? config.BOOTSTRAP_INVITE_CODE.split(',')
+        .map((s) => s.trim().toUpperCase())
+        .filter(Boolean)
     : [newInviteCode()];
 
   for (const code of wanted) {
     if (!db.prepare('SELECT code FROM invites WHERE code = ?').get(code)) {
-      run('INSERT INTO invites (code, created_by, used_by, used_at, expires_at, created_at) VALUES (?, ?, NULL, NULL, NULL, ?)', code, 'seed', nowIso());
+      run(
+        'INSERT INTO invites (code, created_by, used_by, used_at, expires_at, created_at) VALUES (?, ?, NULL, NULL, NULL, ?)',
+        code,
+        'seed',
+        nowIso(),
+      );
       invites.push(code);
     }
   }

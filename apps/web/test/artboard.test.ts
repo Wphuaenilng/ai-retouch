@@ -120,7 +120,11 @@ describe('视口换算', () => {
 
     const pan = { scale: 1.75, x: -40, y: 22 };
     const art2 = artMatrix(pan, box, SIZE);
-    for (const p of [{ x: 0, y: 0 }, { x: 800, y: 600 }, { x: 333, y: 121 }]) {
+    for (const p of [
+      { x: 0, y: 0 },
+      { x: 800, y: 600 },
+      { x: 333, y: 121 },
+    ]) {
       const back = stageToContent(art2, contentToStage(art2, p));
       assert.ok(nearly(back.x, p.x, 1e-9) && nearly(back.y, p.y, 1e-9), '舞台↔内容应严格互逆');
     }

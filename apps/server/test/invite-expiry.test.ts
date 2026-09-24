@@ -59,7 +59,10 @@ describe('认领', () => {
     const r = registerWithInvite(code, name(), 'pw-1234567890');
     assert.deepEqual(r, { ok: false, reason: 'expired' });
     // 过期不等于作废：码还留着，只是不能再被认领
-    assert.equal((db.prepare('SELECT used_by FROM invites WHERE code = ?').get(code) as { used_by: string | null }).used_by, null);
+    assert.equal(
+      (db.prepare('SELECT used_by FROM invites WHERE code = ?').get(code) as { used_by: string | null }).used_by,
+      null,
+    );
   });
 
   it('已被用掉的码与不存在的码分别报 used / invite', () => {

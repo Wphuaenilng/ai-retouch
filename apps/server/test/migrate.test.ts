@@ -35,7 +35,9 @@ describe('迁移版本表', () => {
   it('已有表但没有版本号的老库：认领基线，数据不丢', () => {
     const h = fresh();
     h.exec(BASELINE_SQL);
-    h.exec("INSERT INTO users (id, username, password_hash, role, quota_per_day, created_at) VALUES ('us_1', 'a', 'x', 'user', 30, '2026-01-01')");
+    h.exec(
+      "INSERT INTO users (id, username, password_hash, role, quota_per_day, created_at) VALUES ('us_1', 'a', 'x', 'user', 30, '2026-01-01')",
+    );
     assert.equal(readVersion(h), 0);
 
     const v = runMigrations(h, []);
@@ -57,7 +59,9 @@ describe('迁移版本表', () => {
       { name: 'b-add-note', sql: 'ALTER TABLE users ADD COLUMN note TEXT' },
     ];
     assert.equal(runMigrations(h, migs), 3);
-    h.exec("INSERT INTO users (id, username, password_hash, role, quota_per_day, created_at) VALUES ('us_2', 'b', 'x', 'user', 30, '2026-01-01')");
+    h.exec(
+      "INSERT INTO users (id, username, password_hash, role, quota_per_day, created_at) VALUES ('us_2', 'b', 'x', 'user', 30, '2026-01-01')",
+    );
     const row = h.prepare("SELECT quota2, note FROM users WHERE id = 'us_2'").get() as { quota2: number; note: string | null };
     assert.equal(row.quota2, 7);
     assert.equal(row.note, null);

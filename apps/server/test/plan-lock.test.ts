@@ -29,7 +29,19 @@ function makePlan(): string {
     documentId: DOC,
     userMessage: '换背景再变亮',
     planner: 'mock-rules',
-    steps: [{ idx: 0, tool: 'replace_background', params: { color: '#ffffff' }, deps: [], executor: 'server', title: '换背景', status: 'pending', taskId: null, error: null }],
+    steps: [
+      {
+        idx: 0,
+        tool: 'replace_background',
+        params: { color: '#ffffff' },
+        deps: [],
+        executor: 'server',
+        title: '换背景',
+        status: 'pending',
+        taskId: null,
+        error: null,
+      },
+    ],
   });
   return row.id;
 }

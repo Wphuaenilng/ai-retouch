@@ -67,9 +67,7 @@ export function validatePlan(draft: PlanDraft, facts: PlanFacts): ValidateResult
       return;
     }
 
-    const deps = s.deps
-      .map((d) => idToIdx.get(d))
-      .filter((x): x is number => typeof x === 'number' && x !== i);
+    const deps = s.deps.map((d) => idToIdx.get(d)).filter((x): x is number => typeof x === 'number' && x !== i);
 
     steps.push({
       idx: i,

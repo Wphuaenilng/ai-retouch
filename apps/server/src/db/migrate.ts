@@ -37,7 +37,11 @@ export function readVersion(handle: DbHandle): number {
 }
 
 /** 返回执行后的版本号 */
-export function runMigrations(handle: DbHandle, migrations: Migration[] = MIGRATIONS, log: (msg: string) => void = (m) => console.log(m)): number {
+export function runMigrations(
+  handle: DbHandle,
+  migrations: Migration[] = MIGRATIONS,
+  log: (msg: string) => void = (m) => console.log(m),
+): number {
   const target = BASELINE_VERSION + migrations.length;
   let v = readVersion(handle);
 
@@ -50,7 +54,9 @@ export function runMigrations(handle: DbHandle, migrations: Migration[] = MIGRAT
   }
 
   if (v > target) {
-    throw new Error(`[db] 数据库版本 v${v} 比代码能提供的 v${target} 更新：这是回滚或多人分支后的库，拒绝启动（请恢复代码或补迁移）`);
+    throw new Error(
+      `[db] 数据库版本 v${v} 比代码能提供的 v${target} 更新：这是回滚或多人分支后的库，拒绝启动（请恢复代码或补迁移）`,
+    );
   }
 
   for (let i = v; i < target; i += 1) {

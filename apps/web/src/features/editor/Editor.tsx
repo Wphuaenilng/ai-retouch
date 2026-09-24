@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getTool, visibleTools, type DocCanvas, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
+import {
+  getTool,
+  visibleTools,
+  type DocCanvas,
+  type DocumentDTO,
+  type ImageDTO,
+  type MeDTO,
+  type TaskDTO,
+  type ToolDef,
+} from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { runClientTool } from '../../lib/clientTools';
 import { canvasToBlob } from '../../lib/image';
@@ -13,7 +22,10 @@ import { CanvasView } from './CanvasView';
 import { ToolForm } from '../tools/ToolForm';
 
 function shortLabel(t: ToolDef): string {
-  return t.title.split(' / ')[0].replace(/（.*?）/g, '').slice(0, 4);
+  return t.title
+    .split(' / ')[0]
+    .replace(/（.*?）/g, '')
+    .slice(0, 4);
 }
 
 /** split_layers 的 output.layers → applyLayers 的入参；不足两层就当没这回事 */
@@ -22,7 +34,10 @@ function splitLayerOutput(output: Record<string, unknown> | null | undefined): {
   if (!Array.isArray(v)) return null;
   const list = v
     .filter((x): x is { name?: unknown; imageId?: unknown } => typeof x === 'object' && x !== null)
-    .map((x) => ({ name: typeof x.name === 'string' ? x.name : '图层', imageId: typeof x.imageId === 'string' ? x.imageId : null }))
+    .map((x) => ({
+      name: typeof x.name === 'string' ? x.name : '图层',
+      imageId: typeof x.imageId === 'string' ? x.imageId : null,
+    }))
     .filter((x) => x.imageId !== null);
   return list.length >= 2 ? list : null;
 }
@@ -39,8 +54,7 @@ function LayersPanel(): ReactElement {
   return (
     <div className="layers">
       <div className="panel-h">
-        图 层
-        <span className="tag">{doc.canvas.layers.length} 个</span>
+        图 层<span className="tag">{doc.canvas.layers.length} 个</span>
       </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {layers.map((l, vi) => (
@@ -53,7 +67,11 @@ function LayersPanel(): ReactElement {
               onKeyDown={(e) => e.key === 'Enter' && setActive(l.id)}
             >
               <span className="thumb">
-                {l.imageId ? <img src={`/api/images/${l.imageId}`} alt="" /> : <Icon name={l.kind === 'adjust' ? 'i-adjust' : 'i-layers'} className="ic sm" />}
+                {l.imageId ? (
+                  <img src={`/api/images/${l.imageId}`} alt="" />
+                ) : (
+                  <Icon name={l.kind === 'adjust' ? 'i-adjust' : 'i-layers'} className="ic sm" />
+                )}
               </span>
               <span className="nm">{l.name}</span>
               <span className="val">{Math.round(l.opacity * 100)}%</span>
@@ -85,10 +103,22 @@ function LayersPanel(): ReactElement {
             {/* 只对选中的那一层展开控制，避免每行都挂一套控件把面板挤爆 */}
             {doc.canvas.activeLayerId === l.id && (
               <div className="lctl">
-                <button className="icbtn mono" style={{ width: 26, height: 26 }} aria-label="上移一层" disabled={vi === 0} onClick={() => moveLayer(l.id, 1)}>
+                <button
+                  className="icbtn mono"
+                  style={{ width: 26, height: 26 }}
+                  aria-label="上移一层"
+                  disabled={vi === 0}
+                  onClick={() => moveLayer(l.id, 1)}
+                >
                   ↑
                 </button>
-                <button className="icbtn mono" style={{ width: 26, height: 26 }} aria-label="下移一层" disabled={vi === layers.length - 1} onClick={() => moveLayer(l.id, -1)}>
+                <button
+                  className="icbtn mono"
+                  style={{ width: 26, height: 26 }}
+                  aria-label="下移一层"
+                  disabled={vi === layers.length - 1}
+                  onClick={() => moveLayer(l.id, -1)}
+                >
                   ↓
                 </button>
                 <input
@@ -131,7 +161,12 @@ function FilmStrip({ images, onPick }: { images: ImageDTO[]; onPick: (id: string
       </div>
       <div className="thumbs">
         {images.map((im, i) => (
-          <button key={im.id} className={`thumb ${active === im.id ? 'on' : ''}`} onClick={() => onPick(im.id)} title={`${im.width}×${im.height}`}>
+          <button
+            key={im.id}
+            className={`thumb ${active === im.id ? 'on' : ''}`}
+            onClick={() => onPick(im.id)}
+            title={`${im.width}×${im.height}`}
+          >
             <span className="ph">
               <img src={im.url} alt="" loading="lazy" />
             </span>
@@ -171,7 +206,9 @@ export function EditorPage(): ReactElement {
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const [dock, setDock] = useState<ToolDef | null>(null);
   /** 小屏下侧栏是浮层，默认收起，否则 340px 会把画布永久盖住 */
-  const [sideOpen, setSideOpen] = useState(() => typeof window === 'undefined' || !window.matchMedia('(max-width: 860px)').matches);
+  const [sideOpen, setSideOpen] = useState(
+    () => typeof window === 'undefined' || !window.matchMedia('(max-width: 860px)').matches,
+  );
   const maskImageId = useRef<string | null>(null);
   const maskUrl = useRef<string | null>(null);
   /** 每笔画一个序号：只有最后一次涂画的回执才允许写回选区，避免慢响应倒序覆盖 */
@@ -185,8 +222,10 @@ export function EditorPage(): ReactElement {
     setTimeout(() => setToast(null), 4200);
   }, []);
 
-    const refreshImages = useCallback(async (): Promise<void> => {
-    const r = await api.get<{ images: ImageDTO[] }>(`/api/images?kinds=result,original&limit=12&documentId=${id ?? ''}`).catch(() => null);
+  const refreshImages = useCallback(async (): Promise<void> => {
+    const r = await api
+      .get<{ images: ImageDTO[] }>(`/api/images?kinds=result,original&limit=12&documentId=${id ?? ''}`)
+      .catch(() => null);
     if (r) setImages(r.images.slice(0, 12));
   }, [id]);
 
@@ -201,7 +240,10 @@ export function EditorPage(): ReactElement {
         nav('/studio', { replace: true });
       }
     })();
-    void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
+    void api
+      .get<{ me: MeDTO }>('/api/me')
+      .then((r) => setMe(r.me))
+      .catch(() => undefined);
     void refreshImages();
   }, [id, setDoc, nav, flash, refreshImages]);
 
@@ -312,7 +354,11 @@ export function EditorPage(): ReactElement {
       flash(`${getTool(t.tool)?.title ?? t.tool} 完成`, true);
     }
     void refreshImages();
-    if (t.costYuan) void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
+    if (t.costYuan)
+      void api
+        .get<{ me: MeDTO }>('/api/me')
+        .then((r) => setMe(r.me))
+        .catch(() => undefined);
   });
 
   useEvent('task.progress', (e) => {
@@ -427,7 +473,13 @@ export function EditorPage(): ReactElement {
             <Icon name="i-left" />
           </Link>
           <span className="docname">{doc.title}</span>
-          <span className="save mono">{dirty ? '未保存…' : doc ? `已保存 ${new Date(doc.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}` : ''}</span>
+          <span className="save mono">
+            {dirty
+              ? '未保存…'
+              : doc
+                ? `已保存 ${new Date(doc.updatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+                : ''}
+          </span>
         </div>
         <div className="c">
           <button className="icbtn" onClick={undo} disabled={!past} aria-label="撤销" title="撤销 (⌘Z)">
@@ -437,7 +489,12 @@ export function EditorPage(): ReactElement {
             <Icon name="i-redo" />
           </button>
           <span className="sep" />
-          <button className={`icbtn ${compare ? 'on' : ''}`} onClick={() => setCompare(!compare)} aria-label="前后对比" title="前后对比 (\)">
+          <button
+            className={`icbtn ${compare ? 'on' : ''}`}
+            onClick={() => setCompare(!compare)}
+            aria-label="前后对比"
+            title="前后对比 (\)"
+          >
             <Icon name="i-compare" />
           </button>
           {running && (
@@ -487,7 +544,11 @@ export function EditorPage(): ReactElement {
             </button>
           ))}
           <span className="spacer" />
-          <button className={tool === 'hand' ? 'on' : ''} title="平移画布 · 也可直接拖动空白处或按住空格" onClick={() => setTool('hand')}>
+          <button
+            className={tool === 'hand' ? 'on' : ''}
+            title="平移画布 · 也可直接拖动空白处或按住空格"
+            onClick={() => setTool('hand')}
+          >
             <Icon name="i-hand" className="ic lg" />手
           </button>
         </nav>

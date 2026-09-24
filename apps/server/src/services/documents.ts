@@ -1,6 +1,14 @@
 import { baseCanvas, type DocCanvas, type DocumentDTO } from '@retouch/shared';
 import { err } from '../lib/errors';
-import { deleteDocument, findDocument, insertDocument, listDocuments, parseCanvas, updateDocument, type DocumentRow } from '../store/documents';
+import {
+  deleteDocument,
+  findDocument,
+  insertDocument,
+  listDocuments,
+  parseCanvas,
+  updateDocument,
+  type DocumentRow,
+} from '../store/documents';
 import { requireOwned } from './images';
 
 export function toDTO(row: DocumentRow): DocumentDTO {
@@ -23,9 +31,7 @@ export function requireDoc(id: string, userId: string): DocumentRow {
 export function createDocument(userId: string, input: { title?: unknown; imageId: string; canvas?: DocCanvas }): DocumentDTO {
   const image = requireOwned(input.imageId, userId);
   const canvas = input.canvas ?? baseCanvas(image.width, image.height, image.id);
-  return toDTO(
-    insertDocument({ userId, title: input.title, canvas, sourceImageId: image.id }),
-  );
+  return toDTO(insertDocument({ userId, title: input.title, canvas, sourceImageId: image.id }));
 }
 
 export function createBlankDocument(userId: string, title = '新建项目'): DocumentDTO {
@@ -74,12 +80,10 @@ export function docFacts(row: DocumentRow): {
   hasMultipleImages: boolean;
 } {
   const canvas = parseCanvas(row);
-  const imageIds = new Set(
-    canvas.layers.map((l) => l.imageId).filter((x): x is string => typeof x === 'string' && x.length > 0),
-  );
+  const imageIds = new Set(canvas.layers.map((l) => l.imageId).filter((x): x is string => typeof x === 'string' && x.length > 0));
   const active = canvas.layers.find((l) => l.id === canvas.activeLayerId) ?? canvas.layers.at(-1);
   const maskLayer = [...canvas.layers].reverse().find((l) => l.kind === 'mask' && l.visible);
-  const maskImageId = canvas.selection?.maskImageId ?? (maskLayer?.imageId ?? null);
+  const maskImageId = canvas.selection?.maskImageId ?? maskLayer?.imageId ?? null;
   return {
     currentImageId: active?.imageId ?? canvas.sourceImageId ?? null,
     maskImageId: maskImageId ?? null,

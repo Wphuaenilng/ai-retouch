@@ -19,8 +19,8 @@
   --green: #7fa98b;
   --amber: #c79a54;
 
-  --mono: "Cascadia Mono", "IBM Plex Mono", "JetBrains Mono", Consolas, "Courier New", monospace;
-  --sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, sans-serif;
+  --mono: 'Cascadia Mono', 'IBM Plex Mono', 'JetBrains Mono', Consolas, 'Courier New', monospace;
+  --sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
 
   --r-sm: 4px;
   --r-md: 7px;
@@ -217,10 +217,14 @@ select {
 }
 .select {
   appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
-    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
-  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
-  background-size: 5px 5px, 5px 5px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-3) 50%), linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position:
+    calc(100% - 15px) 50%,
+    calc(100% - 10px) 50%;
+  background-size:
+    5px 5px,
+    5px 5px;
   background-repeat: no-repeat;
   font-size: 13px;
   padding-right: 28px;
@@ -285,7 +289,9 @@ input[type='color'] {
   height: 12px;
   border-radius: 50%;
   background: var(--ink-2);
-  transition: transform 160ms var(--ease-dev), background 160ms;
+  transition:
+    transform 160ms var(--ease-dev),
+    background 160ms;
 }
 .switch.on i {
   background: rgba(200, 80, 60, 0.35);
@@ -987,10 +993,13 @@ input[type='color'] {
 /* 抠图结果是透明 PNG，铺棋盘格才看得出边界 */
 .viewer-box.alpha {
   background-color: #131417;
-  background-image: linear-gradient(45deg, #1c1e22 25%, transparent 25%, transparent 75%, #1c1e22 75%),
+  background-image:
+    linear-gradient(45deg, #1c1e22 25%, transparent 25%, transparent 75%, #1c1e22 75%),
     linear-gradient(45deg, #1c1e22 25%, transparent 25%, transparent 75%, #1c1e22 75%);
   background-size: 18px 18px;
-  background-position: 0 0, 9px 9px;
+  background-position:
+    0 0,
+    9px 9px;
 }
 .viewer-box > img {
   position: absolute;

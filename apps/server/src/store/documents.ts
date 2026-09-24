@@ -61,7 +61,11 @@ export function findDocument(id: string): DocumentRow | undefined {
 }
 
 export function listDocuments(userId: string, limit = 50): DocumentRow[] {
-  return all<DocumentRow>('SELECT * FROM documents WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?', userId, Math.min(limit, 200));
+  return all<DocumentRow>(
+    'SELECT * FROM documents WHERE user_id = ? ORDER BY updated_at DESC LIMIT ?',
+    userId,
+    Math.min(limit, 200),
+  );
 }
 
 export function updateDocument(

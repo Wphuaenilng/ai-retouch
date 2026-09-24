@@ -160,7 +160,9 @@ async function main(): Promise<void> {
   );
   check('管理员登录', adminLogin.me.role === 'admin');
 
-  const invite = data(await api<{ data: { codes: string[] } }>('/api/admin/invites', { method: 'POST', body: JSON.stringify({ count: 1 }) }));
+  const invite = data(
+    await api<{ data: { codes: string[] } }>('/api/admin/invites', { method: 'POST', body: JSON.stringify({ count: 1 }) }),
+  );
   check('管理员生成邀请码', invite.codes.length === 1, invite.codes[0]);
 
   const username = `smoke_${Date.now().toString(36)}`;
@@ -183,25 +185,38 @@ async function main(): Promise<void> {
 
   const fd = new FormData();
   fd.append('file', new Blob([new Uint8Array(IMAGE_BUF)], { type: 'image/png' }), 'portrait.png');
-  const up = data(await api<{ data: { original: { id: string; width: number; height: number } } }>('/api/uploads', { method: 'POST', body: fd }));
+  const up = data(
+    await api<{ data: { original: { id: string; width: number; height: number } } }>('/api/uploads', {
+      method: 'POST',
+      body: fd,
+    }),
+  );
   check('上传并落库', Boolean(up.original.id), `${up.original.width}×${up.original.height}`);
 
-  const doc = data(await api<{ data: { document: { id: string } } }>('/api/documents', {
-    method: 'POST',
-    body: JSON.stringify({ title: '冒烟测试', imageId: up.original.id }),
-  }));
+  const doc = data(
+    await api<{ data: { document: { id: string } } }>('/api/documents', {
+      method: 'POST',
+      body: JSON.stringify({ title: '冒烟测试', imageId: up.original.id }),
+    }),
+  );
   check('创建文档', Boolean(doc.document.id));
 
   const sse = openSse();
   await sleep(400);
 
-  const t1 = data(await api<{ data: { task: { id: string } } }>('/api/tasks', {
-    method: 'POST',
-    body: JSON.stringify({ tool: 'upscale', params: { imageId: up.original.id, scale: 2 }, documentId: doc.document.id }),
-  }));
+  const t1 = data(
+    await api<{ data: { task: { id: string } } }>('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify({ tool: 'upscale', params: { imageId: up.original.id, scale: 2 }, documentId: doc.document.id }),
+    }),
+  );
   const done = await waitTask(t1.task.id);
   await sleep(400);
-  check('单工具任务跑通（mock 上游）', done.status === 'succeeded' && Boolean(done.resultImageId), `${done.provider}/${done.model}`);
+  check(
+    '单工具任务跑通（mock 上游）',
+    done.status === 'succeeded' && Boolean(done.resultImageId),
+    `${done.provider}/${done.model}`,
+  );
   check(
     'SSE 实时推送任务事件',
     sse.events.includes('task.queued') && sse.events.includes('task.succeeded'),
@@ -219,10 +234,16 @@ async function main(): Promise<void> {
   const maskUp = data(await api<{ data: { mask: { id: string } } }>('/api/uploads', { method: 'POST', body: mfd }));
   check('遮罩可单独上传（不带原图）', Boolean(maskUp.mask.id));
 
-  const eraseTask = data(await api<{ data: { task: { id: string } } }>('/api/tasks', {
-    method: 'POST',
-    body: JSON.stringify({ tool: 'erase', params: { imageId: up.original.id, maskImageId: maskUp.mask.id }, documentId: doc.document.id }),
-  }));
+  const eraseTask = data(
+    await api<{ data: { task: { id: string } } }>('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify({
+        tool: 'erase',
+        params: { imageId: up.original.id, maskImageId: maskUp.mask.id },
+        documentId: doc.document.id,
+      }),
+    }),
+  );
   const erased = await waitTask(eraseTask.task.id);
   check('选区直连消除出图', Boolean(erased.resultImageId), `${erased.provider}/${erased.model}`);
 
@@ -248,13 +269,17 @@ async function main(): Promise<void> {
   check('未登录取图片被拒（401）', noAuth.status === 401, `HTTP ${noAuth.status}`);
   cookie = userCookie;
 
-  const plan = data(await api<{ data: { plan: { id: string; steps: { tool: string }[] } } }>('/api/agent/plans', {
-    method: 'POST',
-    body: JSON.stringify({ documentId: doc.document.id, message: '把背景换成纯白，然后超分到 2 倍' }),
-  }));
+  const plan = data(
+    await api<{ data: { plan: { id: string; steps: { tool: string }[] } } }>('/api/agent/plans', {
+      method: 'POST',
+      body: JSON.stringify({ documentId: doc.document.id, message: '把背景换成纯白，然后超分到 2 倍' }),
+    }),
+  );
   check('Agent 产出两步计划', plan.plan.steps.length === 2, plan.plan.steps.map((s) => s.tool).join(' → '));
 
-  const approved = data(await api<{ data: { plan: { id: string } } }>(`/api/agent/plans/${plan.plan.id}/approve`, { method: 'POST' }));
+  const approved = data(
+    await api<{ data: { plan: { id: string } } }>(`/api/agent/plans/${plan.plan.id}/approve`, { method: 'POST' }),
+  );
   const finished = await waitPlan(approved.plan.id);
   check(
     'Agent 顺序执行并传递中间结果',
@@ -271,7 +296,10 @@ async function main(): Promise<void> {
   );
   check('未知工具被拒', typeof badTool === 'string' && /没有这个工具/.test(badTool as string));
 
-  const needMask = await api('/api/tasks', { method: 'POST', body: JSON.stringify({ tool: 'erase', params: { imageId: up.original.id } }) }).then(
+  const needMask = await api('/api/tasks', {
+    method: 'POST',
+    body: JSON.stringify({ tool: 'erase', params: { imageId: up.original.id } }),
+  }).then(
     () => null,
     (e: Error) => e.message,
   );

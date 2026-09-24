@@ -34,7 +34,10 @@ export interface PlanRow {
  * steps JSON 读-改-写，互相覆盖状态、还会把同一步跑两遍重复扣钱。
  */
 export function claimPlan(id: string, token: string): boolean {
-  return run('UPDATE plans SET exec_token = ?, exec_started_at = ? WHERE id = ? AND exec_token IS NULL', token, nowIso(), id).changes === 1;
+  return (
+    run('UPDATE plans SET exec_token = ?, exec_started_at = ? WHERE id = ? AND exec_token IS NULL', token, nowIso(), id)
+      .changes === 1
+  );
 }
 
 export function releasePlan(id: string, token: string): void {

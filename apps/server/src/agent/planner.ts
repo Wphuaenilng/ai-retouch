@@ -40,11 +40,7 @@ export function mockPlan(input: PlanInput): PlanOutput {
   }
 
   if (/背景/.test(m) && /(换|改|替换|去掉|移除|去除)/.test(m)) {
-    add(
-      'replace_background',
-      color ? { color } : { prompt: afterWord || '干净的摄影棚背景' },
-      '替换背景，主体保持不变',
-    );
+    add('replace_background', color ? { color } : { prompt: afterWord || '干净的摄影棚背景' }, '替换背景，主体保持不变');
   } else if (/背景/.test(m) && /(透明|抠)/.test(m)) {
     add('cutout', {}, '抠出主体并输出透明底');
   } else if (/抠图|抠出|透明底/.test(m)) {

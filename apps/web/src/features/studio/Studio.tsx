@@ -58,17 +58,35 @@ function AccountMenu({ username }: { username: string }): ReactElement {
           </div>
           <div className="field">
             <label>当前密码</label>
-            <input className="input" type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
+            <input
+              className="input"
+              type="password"
+              value={cur}
+              onChange={(e) => setCur(e.target.value)}
+              autoComplete="current-password"
+            />
           </div>
           <div className="field">
             <label>新密码（至少 8 位）</label>
-            <input className="input" type="password" value={nxt} onChange={(e) => setNxt(e.target.value)} autoComplete="new-password" />
+            <input
+              className="input"
+              type="password"
+              value={nxt}
+              onChange={(e) => setNxt(e.target.value)}
+              autoComplete="new-password"
+            />
           </div>
           <button className="btn primary" disabled={busy || !cur || nxt.length < 8} onClick={() => void submit()}>
             {busy ? '提交中…' : '修改密码'}
           </button>
-          {msg && <div className="hint" style={{ marginTop: 8 }}>{msg}</div>}
-          <div className="hint" style={{ marginTop: 8 }}>改密后所有设备都要重新登录。</div>
+          {msg && (
+            <div className="hint" style={{ marginTop: 8 }}>
+              {msg}
+            </div>
+          )}
+          <div className="hint" style={{ marginTop: 8 }}>
+            改密后所有设备都要重新登录。
+          </div>
         </div>
       )}
     </div>
@@ -196,7 +214,12 @@ function ImageStage({ img }: { img: ImageDTO }): ReactElement {
         }}
         onDoubleClick={() => setView(null)}
       >
-        <img src={img.url} alt="当前图片" style={{ left: (box.w - w) / 2 + ox, top: (box.h - h) / 2 + oy, width: w, height: h }} draggable={false} />
+        <img
+          src={img.url}
+          alt="当前图片"
+          style={{ left: (box.w - w) / 2 + ox, top: (box.h - h) / 2 + oy, width: w, height: h }}
+          draggable={false}
+        />
         <span className="cv-hint">滚轮缩放 · 拖动平移 · 双击复位</span>
         <div className="cv-tools" onPointerDown={(e) => e.stopPropagation()}>
           <button className="icbtn" title="缩小" onClick={() => zoomTo(s / 1.2)}>
@@ -265,11 +288,17 @@ export function StudioPage(): ReactElement {
     ]);
     setImages(imgs.images);
     setDocs(ds.documents);
-    setCurrentId((cur) => cur ?? imgs.images.find((i) => i.kind === 'edit')?.id ?? imgs.images.find((i) => i.kind === 'original')?.id ?? null);
+    setCurrentId(
+      (cur) =>
+        cur ?? imgs.images.find((i) => i.kind === 'edit')?.id ?? imgs.images.find((i) => i.kind === 'original')?.id ?? null,
+    );
   }, []);
 
   useEffect(() => {
-    void api.get<{ me: MeDTO }>('/api/me').then((r) => setMe(r.me)).catch(() => undefined);
+    void api
+      .get<{ me: MeDTO }>('/api/me')
+      .then((r) => setMe(r.me))
+      .catch(() => undefined);
     void refresh();
   }, [refresh]);
 
@@ -330,13 +359,10 @@ export function StudioPage(): ReactElement {
     }
   };
 
-  const openDoc = useCallback(
-    async (imageId: string): Promise<string> => {
-      const { document } = await api.post<{ document: DocumentDTO }>('/api/documents', { imageId, title: '未命名项目' });
-      return document.id;
-    },
-    [],
-  );
+  const openDoc = useCallback(async (imageId: string): Promise<string> => {
+    const { document } = await api.post<{ document: DocumentDTO }>('/api/documents', { imageId, title: '未命名项目' });
+    return document.id;
+  }, []);
 
   const busy = Boolean(task && !task.resultImageId);
 
@@ -346,7 +372,9 @@ export function StudioPage(): ReactElement {
         <div className="l">
           <span className="mark" />
           <span className="docname">工具箱</span>
-          <span className="save mono">{images.length} 张图 · {docs.length} 个项目</span>
+          <span className="save mono">
+            {images.length} 张图 · {docs.length} 个项目
+          </span>
         </div>
         <div className="c" />
         <div className="r">
@@ -361,7 +389,15 @@ export function StudioPage(): ReactElement {
             </button>
           )}
           {me && <AccountMenu username={me.username} />}
-          <button className="btn ghost" onClick={() => void api.post('/api/auth/logout').then(() => nav('/login')).catch(() => nav('/login'))}>
+          <button
+            className="btn ghost"
+            onClick={() =>
+              void api
+                .post('/api/auth/logout')
+                .then(() => nav('/login'))
+                .catch(() => nav('/login'))
+            }
+          >
             退出
           </button>
         </div>
@@ -482,7 +518,15 @@ export function StudioPage(): ReactElement {
                 {docs.slice(0, 8).map((d) => (
                   <button key={d.id} className="thumb" onClick={() => void nav(`/editor/${d.id}`)} title={d.title}>
                     <span className="ph">
-                      {d.thumbUrl ? <img src={d.thumbUrl} alt="" /> : <span style={{ display: 'grid', placeItems: 'center', height: '100%', fontSize: 11, color: 'var(--ink-3)' }}>无缩略</span>}
+                      {d.thumbUrl ? (
+                        <img src={d.thumbUrl} alt="" />
+                      ) : (
+                        <span
+                          style={{ display: 'grid', placeItems: 'center', height: '100%', fontSize: 11, color: 'var(--ink-3)' }}
+                        >
+                          无缩略
+                        </span>
+                      )}
                     </span>
                     <span className="cap">{d.title.slice(0, 8)}</span>
                   </button>
@@ -494,7 +538,14 @@ export function StudioPage(): ReactElement {
 
         <Splitter value={paW} min={240} max={560} onChange={setPaW} onReset={resetPaW} />
         <div className="params">
-          <ToolForm key={tool.name} tool={tool} hasImage={Boolean(current) || tool.name === 'text2image'} hasSelection={false} busy={busy} onSubmit={(s) => void run(s)} />
+          <ToolForm
+            key={tool.name}
+            tool={tool}
+            hasImage={Boolean(current) || tool.name === 'text2image'}
+            hasSelection={false}
+            busy={busy}
+            onSubmit={(s) => void run(s)}
+          />
           <div className="kv mono">
             <span>引擎</span>
             <span className="v">{tool.capability ?? '本地'}</span>

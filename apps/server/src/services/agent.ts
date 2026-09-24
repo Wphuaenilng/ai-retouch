@@ -101,7 +101,9 @@ export function skipStep(planId: string, idx: number, userId: string): PlanDTO {
 export function cancelPlan(id: string, userId: string): PlanDTO {
   const row = requirePlan(id, userId);
   if (row.status === 'done' || row.status === 'failed') throw err('BAD_REQUEST', '计划已结束，无法取消');
-  const steps = planSteps(row).map((s) => (s.status === 'pending' || s.status === 'running' ? { ...s, status: 'canceled' as const } : s));
+  const steps = planSteps(row).map((s) =>
+    s.status === 'pending' || s.status === 'running' ? { ...s, status: 'canceled' as const } : s,
+  );
   savePlan(id, { status: 'canceled', steps });
   const dto = toPlanDTO(findPlan(id)!);
   hub.publish(userId, { type: 'plan.updated', plan: dto });

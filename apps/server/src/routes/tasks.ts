@@ -40,7 +40,13 @@ export function taskRoutes(app: FastifyInstance): void {
     const status = wanted.length ? (wanted as TaskStatus[]) : undefined;
     return {
       ok: true,
-      data: { tasks: listUserTasks(s.sub, { status, limit: intParam(q.limit, { name: 'limit', default: 30, max: 200 }), before: q.cursor }) },
+      data: {
+        tasks: listUserTasks(s.sub, {
+          status,
+          limit: intParam(q.limit, { name: 'limit', default: 30, max: 200 }),
+          before: q.cursor,
+        }),
+      },
     };
   });
 
@@ -70,6 +76,9 @@ export function taskRoutes(app: FastifyInstance): void {
     const s = requireUser(req);
     const row = findTask(p(req).id);
     if (!row || row.user_id !== s.sub) throw err('NOT_FOUND', '任务不存在');
-    return { ok: true, data: { task: toTaskDTO(row), worker: { concurrency: config.WORKER_CONCURRENCY }, providers: providerStatus() } };
+    return {
+      ok: true,
+      data: { task: toTaskDTO(row), worker: { concurrency: config.WORKER_CONCURRENCY }, providers: providerStatus() },
+    };
   });
 }

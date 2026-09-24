@@ -169,7 +169,8 @@ export async function executeTask(row: TaskRow): Promise<void> {
 
   try {
     const result = await withAbort(
-      (signal) => runner({ userId: row.user_id, taskId: row.id, documentId: row.document_id, onProgress, signal }, taskParams(row)),
+      (signal) =>
+        runner({ userId: row.user_id, taskId: row.id, documentId: row.document_id, onProgress, signal }, taskParams(row)),
       config.TASK_TIMEOUT_MS,
     );
     setProvider(row.id, result.provider, result.model);
@@ -198,10 +199,7 @@ function publishFinal(userId: string, taskId: string): void {
   hub.publish(userId, { type: fresh.status === 'succeeded' ? 'task.succeeded' : 'task.failed', task });
 }
 
-export function listUserTasks(
-  userId: string,
-  opts: { status?: TaskStatus[]; limit?: number; before?: string } = {},
-): TaskDTO[] {
+export function listUserTasks(userId: string, opts: { status?: TaskStatus[]; limit?: number; before?: string } = {}): TaskDTO[] {
   return listTasks(userId, opts).map(toTaskDTO);
 }
 

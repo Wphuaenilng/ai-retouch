@@ -29,7 +29,10 @@ function assertDepsPointBack(steps: { idx: number; deps: number[] }[]): void {
   for (const s of steps) {
     for (const d of s.deps) {
       assert.ok(d < s.idx, `步骤 ${s.idx} 依赖了不靠前的 ${d}`);
-      assert.ok(steps.some((x) => x.idx === d), `步骤 ${s.idx} 依赖了不存在的 ${d}`);
+      assert.ok(
+        steps.some((x) => x.idx === d),
+        `步骤 ${s.idx} 依赖了不存在的 ${d}`,
+      );
     }
   }
 }
@@ -38,8 +41,14 @@ describe('M4 验收 1：换背景 + 裁 1:1', () => {
   const r = planFor('把背景换成纯白，然后把图片裁成 1:1');
 
   it('正好两步，顺序是先服务端后前端', () => {
-    assert.deepEqual(r.steps.map((s) => s.tool), ['replace_background', 'transform']);
-    assert.deepEqual(r.steps.map((s) => s.executor), ['server', 'client']);
+    assert.deepEqual(
+      r.steps.map((s) => s.tool),
+      ['replace_background', 'transform'],
+    );
+    assert.deepEqual(
+      r.steps.map((s) => s.executor),
+      ['server', 'client'],
+    );
   });
 
   it('参数被正确钳制', () => {
@@ -63,7 +72,10 @@ describe('M4 验收 2：先画选区再消除', () => {
 
   it('有选区时走 erase，并自动引用现有选区', () => {
     const r = planFor('去掉左上角的水印', withSel);
-    assert.deepEqual(r.steps.map((s) => s.tool), ['erase']);
+    assert.deepEqual(
+      r.steps.map((s) => s.tool),
+      ['erase'],
+    );
     assert.equal(r.steps[0]!.params.maskImageId, 'im_mask');
     assert.equal(r.steps[0]!.params.imageId, 'im_current');
     assert.ok(r.warnings.some((w) => w.includes('选区')));
@@ -71,7 +83,10 @@ describe('M4 验收 2：先画选区再消除', () => {
 
   it('没有选区时退到 remove_text（不阻塞用户）', () => {
     const r = planFor('去掉左上角的水印');
-    assert.deepEqual(r.steps.map((s) => s.tool), ['remove_text']);
+    assert.deepEqual(
+      r.steps.map((s) => s.tool),
+      ['remove_text'],
+    );
   });
 
   it('需要选区却没有选区的工具，会被校验器挡下来', () => {
@@ -87,8 +102,14 @@ describe('M4 验收 3：超分 4x 后转黑白（前后端混排）', () => {
   const r = planFor('先超分到 4 倍，再调成黑白');
 
   it('顺序正确：服务端步骤在前，客户端调色在后', () => {
-    assert.deepEqual(r.steps.map((s) => s.tool), ['upscale', 'adjust']);
-    assert.deepEqual(r.steps.map((s) => getTool(s.tool)?.executor), ['server', 'client']);
+    assert.deepEqual(
+      r.steps.map((s) => s.tool),
+      ['upscale', 'adjust'],
+    );
+    assert.deepEqual(
+      r.steps.map((s) => getTool(s.tool)?.executor),
+      ['server', 'client'],
+    );
   });
 
   it('参数分别落到 scale 与 saturation', () => {

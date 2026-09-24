@@ -75,15 +75,14 @@ export const mockProvider: ImageProvider = {
       ]);
       // 边缘棋盘格：一眼能看出这是占位图，不会误认成模型效果
       const cell = Math.max(8, Math.round(w / 32));
-      for (let y = 0; y < h; y += cell) for (let x = 0; x < w; x += cell) {
-        if (x < cell * 2 || y < cell * 2 || x > w - cell * 3 || y > h - cell * 3) {
-          if (((x / cell + y / cell) | 0) % 2 === 0) c.fillRect(x, y, cell, cell, [233, 233, 229, 255]);
+      for (let y = 0; y < h; y += cell)
+        for (let x = 0; x < w; x += cell) {
+          if (x < cell * 2 || y < cell * 2 || x > w - cell * 3 || y > h - cell * 3) {
+            if (((x / cell + y / cell) | 0) % 2 === 0) c.fillRect(x, y, cell, cell, [233, 233, 229, 255]);
+          }
         }
-      }
       if (req.mask) {
-        c.fillRect(Math.round(w * 0.25), Math.round(h * 0.25), Math.round(w * 0.5), Math.round(h * 0.5), [
-          200, 80, 60, 90,
-        ]);
+        c.fillRect(Math.round(w * 0.25), Math.round(h * 0.25), Math.round(w * 0.5), Math.round(h * 0.5), [200, 80, 60, 90]);
       }
       const scale = Math.max(2, Math.round(w / 220));
       c.text(cell * 3, cell * 3, CAP_LABEL[req.capability], [233, 233, 229, 255], scale);

@@ -41,8 +41,7 @@ interface DashPoll {
   usage?: { image_count?: number };
 }
 
-const ref = (r: { url?: string; base64?: string }): string | undefined =>
-  USE_SIGNED_URL && r.url ? r.url : r.base64 ?? r.url;
+const ref = (r: { url?: string; base64?: string }): string | undefined => (USE_SIGNED_URL && r.url ? r.url : (r.base64 ?? r.url));
 
 export const wanxProvider: ImageProvider = {
   id: 'wanx',
@@ -89,7 +88,12 @@ export const wanxProvider: ImageProvider = {
 
     const done = await poll<DashPoll>(
       async () => {
-        const j = await getJson<DashPoll>(`${base}/tasks/${taskId}`, { authorization: headers.authorization }, 30_000, opts?.signal);
+        const j = await getJson<DashPoll>(
+          `${base}/tasks/${taskId}`,
+          { authorization: headers.authorization },
+          30_000,
+          opts?.signal,
+        );
         const st = j.output?.task_status;
         if (st === 'SUCCEEDED') return { done: true, value: j };
         if (st === 'FAILED' || st === 'CANCELED') {
@@ -97,7 +101,12 @@ export const wanxProvider: ImageProvider = {
         }
         return { done: false };
       },
-      { intervalMs: 1500, timeoutMs: config.TASK_TIMEOUT_MS, onProgress: (e) => onProgress?.(0.1 + e * 0.8), signal: opts?.signal },
+      {
+        intervalMs: 1500,
+        timeoutMs: config.TASK_TIMEOUT_MS,
+        onProgress: (e) => onProgress?.(0.1 + e * 0.8),
+        signal: opts?.signal,
+      },
     );
 
     const results = done.output?.results ?? [];

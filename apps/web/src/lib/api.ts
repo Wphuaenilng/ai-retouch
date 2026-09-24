@@ -34,14 +34,20 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   if (!res.ok || !json || json.ok === false) {
     if (res.status === 401) window.dispatchEvent(new Event('retouch:unauthorized'));
-    throw new ApiError(json?.error?.code ?? 'INTERNAL', json?.error?.message ?? `${res.status} ${res.statusText}`, res.status, json?.error?.details);
+    throw new ApiError(
+      json?.error?.code ?? 'INTERNAL',
+      json?.error?.message ?? `${res.status} ${res.statusText}`,
+      res.status,
+      json?.error?.details,
+    );
   }
   return json.data as T;
 }
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
+  post: <T>(path: string, body?: unknown) =>
+    request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
   del: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   form: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),

@@ -106,9 +106,7 @@ const transform: ToolDef = {
     target: z.enum(['canvas', 'layer']).optional(),
     layerId: z.string().min(1).optional(),
     cropRatio: aspect.optional(),
-    cropRect: z
-      .object({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() })
-      .optional(),
+    cropRect: z.object({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() }).optional(),
     rotate: z.number().min(-360).max(360).optional(),
     flipH: z.boolean().optional(),
     flipV: z.boolean().optional(),
@@ -270,10 +268,8 @@ const replaceBackground: ToolDef = {
     F.prompt('新背景', '例：米白色摄影棚，柔和顶光，边缘干净'),
     { key: 'color', label: '或纯色背景', kind: 'color', hint: '填了就忽略上面的文字描述' },
   ],
-  agentHint:
-    '"把背景换成…"一律用这个工具，它内部会自动完成抠图 + 背景生成/纯色填充，不要拆成 cutout + prompt_edit。',
-  paramsHint:
-    '{imageId, prompt?, color?:#rrggbb, backgroundImageId?} 三者选一：文字描述新背景 / 纯色 / 指定一张图作背景',
+  agentHint: '"把背景换成…"一律用这个工具，它内部会自动完成抠图 + 背景生成/纯色填充，不要拆成 cutout + prompt_edit。',
+  paramsHint: '{imageId, prompt?, color?:#rrggbb, backgroundImageId?} 三者选一：文字描述新背景 / 纯色 / 指定一张图作背景',
   input: z
     .object({
       imageId: ref.imageId,
@@ -537,10 +533,7 @@ export function visibleTools(): ToolDef[] {
 /** 喂给规划模型的工具清单文本（比 JSON Schema 省 token，也更不容易被模型改写） */
 export function toolSpecForPlanner(): string {
   return TOOLS.filter((t) => t.priority <= 1)
-    .map(
-      (t) =>
-        `- ${t.name}（${t.title}｜${t.executor}｜约 ¥${t.costYuan}）\n  何时用：${t.agentHint}\n  参数：${t.paramsHint}`,
-    )
+    .map((t) => `- ${t.name}（${t.title}｜${t.executor}｜约 ¥${t.costYuan}）\n  何时用：${t.agentHint}\n  参数：${t.paramsHint}`)
     .join('\n');
 }
 
@@ -558,8 +551,6 @@ export function validateToolParams(
       issues: parsed.error.issues.map((i) => `${i.path.join('.') || 'params'}: ${i.message}`),
     };
   }
-  const value = Object.fromEntries(
-    Object.entries(parsed.data as Record<string, unknown>).filter(([, v]) => v !== undefined),
-  );
+  const value = Object.fromEntries(Object.entries(parsed.data as Record<string, unknown>).filter(([, v]) => v !== undefined));
   return { ok: true, value };
 }

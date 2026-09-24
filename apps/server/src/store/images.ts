@@ -47,10 +47,7 @@ export function findImage(id: string): ImageRow | undefined {
   return db.prepare('SELECT * FROM images WHERE id = ?').get(id) as ImageRow | undefined;
 }
 
-export function listImages(
-  userId: string,
-  opts: { kinds?: string[]; limit?: number; documentId?: string } = {},
-): ImageRow[] {
+export function listImages(userId: string, opts: { kinds?: string[]; limit?: number; documentId?: string } = {}): ImageRow[] {
   const limit = Math.min(opts.limit ?? 60, 200);
   const where = ['user_id = ?'];
   const args: unknown[] = [userId];

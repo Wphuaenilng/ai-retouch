@@ -60,10 +60,7 @@ export function findTask(id: string): TaskRow | undefined {
   return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined;
 }
 
-export function listTasks(
-  userId: string,
-  opts: { status?: TaskStatus[]; limit?: number; before?: string } = {},
-): TaskRow[] {
+export function listTasks(userId: string, opts: { status?: TaskStatus[]; limit?: number; before?: string } = {}): TaskRow[] {
   const limit = Math.min(opts.limit ?? 40, 200);
   const where = ['user_id = ?'];
   const args: unknown[] = [userId];
@@ -122,22 +119,26 @@ export function markFailed(id: string, code: string, message: string, opts: { re
 }
 
 export function cancelQueued(id: string, userId: string): boolean {
-  return run(
-    "UPDATE tasks SET status = 'canceled', finished_at = ? WHERE id = ? AND user_id = ? AND status = 'queued'",
-    nowIso(),
-    id,
-    userId,
-  ).changes === 1;
+  return (
+    run(
+      "UPDATE tasks SET status = 'canceled', finished_at = ? WHERE id = ? AND user_id = ? AND status = 'queued'",
+      nowIso(),
+      id,
+      userId,
+    ).changes === 1
+  );
 }
 
 /** 重试：只有失败任务能重新排队 */
 export function requeue(id: string, userId: string): boolean {
-  return run(
-    // 手动重试会再预扣一次，所以 charged 必须回到"未结算"，否则那次预扣永远退不回来
-    "UPDATE tasks SET status = 'queued', progress = 0, error = NULL, error_code = NULL, finished_at = NULL, charged = 0 WHERE id = ? AND user_id = ? AND status = 'failed'",
-    id,
-    userId,
-  ).changes === 1;
+  return (
+    run(
+      // 手动重试会再预扣一次，所以 charged 必须回到"未结算"，否则那次预扣永远退不回来
+      "UPDATE tasks SET status = 'queued', progress = 0, error = NULL, error_code = NULL, finished_at = NULL, charged = 0 WHERE id = ? AND user_id = ? AND status = 'failed'",
+      id,
+      userId,
+    ).changes === 1
+  );
 }
 
 /**

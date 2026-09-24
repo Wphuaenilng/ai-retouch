@@ -63,7 +63,9 @@ async function call(
   promptToCheck?: string,
 ): Promise<{ row: ImageRow | null; rows: ImageRow[]; costYuan: number; provider: string; model: string }> {
   checkPrompt(promptToCheck ?? req.prompt);
-  const res = await generate(cap, { ...req, capability: cap, idempotencyKey: ctx.taskId }, ctx.onProgress, { signal: ctx.signal });
+  const res = await generate(cap, { ...req, capability: cap, idempotencyKey: ctx.taskId }, ctx.onProgress, {
+    signal: ctx.signal,
+  });
   if (ctx.signal?.aborted) throw new Error('任务已取消');
   const rows: ImageRow[] = [];
   for (const img of res.images) rows.push(await storeResult(ctx, img));
@@ -106,7 +108,13 @@ export const RUNNERS: Record<string, Runner> = {
       images: [ref],
       size: { width: row.width, height: row.height },
     });
-    return { resultImageId: r.row?.id ?? null, output: { transparent: true }, costYuan: r.costYuan, provider: r.provider, model: r.model };
+    return {
+      resultImageId: r.row?.id ?? null,
+      output: { transparent: true },
+      costYuan: r.costYuan,
+      provider: r.provider,
+      model: r.model,
+    };
   },
 
   /** 交给编辑模型一步完成，服务端不做像素合成（无 sharp 依赖） */
@@ -127,17 +135,19 @@ export const RUNNERS: Record<string, Runner> = {
   erase: async (ctx, p) => {
     const { ref, row } = await refOf(ctx, String(p.imageId));
     const mask = (await refOf(ctx, String(p.maskImageId))).ref;
-    const r = await call(
-      ctx,
-      'inpaint',
-      {
-        prompt: str(p.prompt) ?? '去掉选区中的内容，用周围环境自然补全，不留痕迹',
-        images: [ref],
-        mask,
-        size: { width: row.width, height: row.height },
-      },
-    );
-    return { resultImageId: r.row?.id ?? null, output: { maskImageId: String(p.maskImageId) }, costYuan: r.costYuan, provider: r.provider, model: r.model };
+    const r = await call(ctx, 'inpaint', {
+      prompt: str(p.prompt) ?? '去掉选区中的内容，用周围环境自然补全，不留痕迹',
+      images: [ref],
+      mask,
+      size: { width: row.width, height: row.height },
+    });
+    return {
+      resultImageId: r.row?.id ?? null,
+      output: { maskImageId: String(p.maskImageId) },
+      costYuan: r.costYuan,
+      provider: r.provider,
+      model: r.model,
+    };
   },
 
   inpaint_replace: async (ctx, p) => {
@@ -149,7 +159,13 @@ export const RUNNERS: Record<string, Runner> = {
       mask,
       size: { width: row.width, height: row.height },
     });
-    return { resultImageId: r.row?.id ?? null, output: { maskImageId: String(p.maskImageId) }, costYuan: r.costYuan, provider: r.provider, model: r.model };
+    return {
+      resultImageId: r.row?.id ?? null,
+      output: { maskImageId: String(p.maskImageId) },
+      costYuan: r.costYuan,
+      provider: r.provider,
+      model: r.model,
+    };
   },
 
   outpaint: async (ctx, p) => {
@@ -180,7 +196,13 @@ export const RUNNERS: Record<string, Runner> = {
       images: [ref],
       size: { width: w, height: h },
     });
-    return { resultImageId: r.row?.id ?? null, output: { width: Math.round(w), height: Math.round(h) }, costYuan: r.costYuan, provider: r.provider, model: r.model };
+    return {
+      resultImageId: r.row?.id ?? null,
+      output: { width: Math.round(w), height: Math.round(h) },
+      costYuan: r.costYuan,
+      provider: r.provider,
+      model: r.model,
+    };
   },
 
   portrait_beautify: async (ctx, p) => {

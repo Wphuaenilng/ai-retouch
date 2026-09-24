@@ -40,10 +40,19 @@ export const postJson = <T>(
   timeoutMs = DEFAULT_TIMEOUT,
   signal?: AbortSignal,
 ) =>
-  call<T>(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }, timeoutMs, signal);
+  call<T>(
+    url,
+    { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) },
+    timeoutMs,
+    signal,
+  );
 
-export const getJson = <T>(url: string, headers: Record<string, string> = {}, timeoutMs = DEFAULT_TIMEOUT, signal?: AbortSignal) =>
-  call<T>(url, { method: 'GET', headers }, timeoutMs, signal);
+export const getJson = <T>(
+  url: string,
+  headers: Record<string, string> = {},
+  timeoutMs = DEFAULT_TIMEOUT,
+  signal?: AbortSignal,
+) => call<T>(url, { method: 'GET', headers }, timeoutMs, signal);
 
 /** 上游结果图的硬上限：没有它，一个乱给的 URL 就能把整个进程 OOM 掉 */
 const MAX_RESULT_BYTES = 48 * 1024 * 1024;
@@ -64,11 +73,17 @@ export async function fetchBinary(
   if (!res.ok) throw new UpstreamError('http', `下载上游结果返回 ${res.status}`, res.status);
   const declared = Number(res.headers.get('content-length') ?? '0');
   if (declared > maxBytes) {
-    throw new UpstreamError('bad_response', `上游结果过大：${Math.round(declared / 1048576)}MB > ${Math.round(maxBytes / 1048576)}MB`);
+    throw new UpstreamError(
+      'bad_response',
+      `上游结果过大：${Math.round(declared / 1048576)}MB > ${Math.round(maxBytes / 1048576)}MB`,
+    );
   }
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length > maxBytes) {
-    throw new UpstreamError('bad_response', `上游结果过大：${Math.round(buf.length / 1048576)}MB > ${Math.round(maxBytes / 1048576)}MB`);
+    throw new UpstreamError(
+      'bad_response',
+      `上游结果过大：${Math.round(buf.length / 1048576)}MB > ${Math.round(maxBytes / 1048576)}MB`,
+    );
   }
   const mime = res.headers.get('content-type') ?? 'image/png';
   return { base64: `data:${mime};base64,${buf.toString('base64')}`, mime };

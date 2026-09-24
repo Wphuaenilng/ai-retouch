@@ -16,7 +16,9 @@ function StepIcon({ status }: { status: PlanStepDTO['status'] }): ReactElement {
     canceled: 'skip',
     pending: '',
   } as const;
-  const icon = { succeeded: 'i-check', running: 'i-play', failed: 'i-x', skipped: 'i-x', canceled: 'i-x', pending: 'i-clock' }[status];
+  const icon = { succeeded: 'i-check', running: 'i-play', failed: 'i-x', skipped: 'i-x', canceled: 'i-x', pending: 'i-clock' }[
+    status
+  ];
   return <span className={`st ${map[status]}`}>{<Icon name={icon} className="ic sm" />}</span>;
 }
 
@@ -41,7 +43,8 @@ function PlanCard({
               {s.executor === 'client' && <span className="t"> · 本地</span>}
             </div>
             <div className="step-meta">
-              {s.status === 'succeeded' && `完成${s.durationMs ? ` · ${(s.durationMs / 1000).toFixed(1)}s` : ''}${s.costYuan ? ` · ¥${s.costYuan.toFixed(2)}` : ''}`}
+              {s.status === 'succeeded' &&
+                `完成${s.durationMs ? ` · ${(s.durationMs / 1000).toFixed(1)}s` : ''}${s.costYuan ? ` · ¥${s.costYuan.toFixed(2)}` : ''}`}
               {s.status === 'running' && '执行中…'}
               {s.status === 'pending' && '等待前序'}
               {s.status === 'failed' && (s.error ?? '失败')}
@@ -67,7 +70,12 @@ function PlanCard({
         <span>计划 ¥{cost.toFixed(2)}</span>
         <span className="sp" />
         {plan.status === 'proposed' && (
-          <button className="btn primary" style={{ height: 26, fontSize: 11 }} disabled={busy} onClick={() => onAction('approve')}>
+          <button
+            className="btn primary"
+            style={{ height: 26, fontSize: 11 }}
+            disabled={busy}
+            onClick={() => onAction('approve')}
+          >
             确认执行
           </button>
         )}
@@ -154,8 +162,7 @@ export function AgentPanel({ documentId }: { documentId: string }): ReactElement
   return (
     <div className="chat">
       <div className="panel-h">
-        对 话
-        <span className="tag mono">{busy ? '规划中…' : '说人话即可'}</span>
+        对 话<span className="tag mono">{busy ? '规划中…' : '说人话即可'}</span>
       </div>
       <div className="chat-body" ref={bodyRef}>
         {msgs.length === 0 && (

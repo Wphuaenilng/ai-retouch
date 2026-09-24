@@ -27,7 +27,10 @@ describe('规则式规划器', () => {
 
   it('组合需求拆成多步并按顺序依赖', () => {
     const draft = mockPlan({ message: '把背景换成纯白，然后裁成 1:1，再亮一点', facts }).draft;
-    assert.deepEqual(draft.steps.map((s) => s.tool), ['replace_background', 'transform', 'adjust']);
+    assert.deepEqual(
+      draft.steps.map((s) => s.tool),
+      ['replace_background', 'transform', 'adjust'],
+    );
     assert.deepEqual(draft.steps[2]!.deps, ['s2']);
     const v = validatePlan(draft, facts);
     assert.equal(v.ok, true);

@@ -37,5 +37,8 @@ export function useEvent<T extends ServerEvent['type']>(
 ): void {
   const ref = useRef(cb);
   ref.current = cb;
-  useEffect(() => onServerEvent((e) => void (e.type === type && (ref.current as unknown as (x: ServerEvent) => void)(e))), [type]);
+  useEffect(
+    () => onServerEvent((e) => void (e.type === type && (ref.current as unknown as (x: ServerEvent) => void)(e))),
+    [type],
+  );
 }

@@ -82,7 +82,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   app.setErrorHandler((e, req, reply) => {
     const code = (e as { code?: string }).code;
     if (code === 'FST_REQ_FILE_TOO_LARGE' || code === 'PART_TOO_LARGE') {
-      return reply.status(413).send({ ok: false, error: { code: 'FILE_TOO_LARGE', message: `单张最大 ${config.MAX_UPLOAD_MB}MB` } });
+      return reply
+        .status(413)
+        .send({ ok: false, error: { code: 'FILE_TOO_LARGE', message: `单张最大 ${config.MAX_UPLOAD_MB}MB` } });
     }
     // Fastify 自己的请求解析错误带 statusCode，别一律按 500 处理
     const status = (e as { statusCode?: number }).statusCode;
@@ -118,7 +120,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   app.setNotFoundHandler(async (req, reply) => {
     if (req.url.startsWith('/api/')) {
-      return reply.status(404).send({ ok: false, error: { code: 'NOT_FOUND', message: `没有这个接口：${req.method} ${req.url}` } });
+      return reply
+        .status(404)
+        .send({ ok: false, error: { code: 'NOT_FOUND', message: `没有这个接口：${req.method} ${req.url}` } });
     }
     return reply.status(404).send({ ok: false, error: { code: 'NOT_FOUND', message: 'not found' } });
   });
@@ -136,7 +140,9 @@ export async function buildApp(): Promise<FastifyInstance> {
         // 否则发新版后老用户拿到的还是旧 hash 的入口，永远更新不到
         reply.header(
           'cache-control',
-          extname(candidate) === '.html' || !candidate.includes(`${sep}assets${sep}`) ? 'no-cache' : 'public, max-age=31536000, immutable',
+          extname(candidate) === '.html' || !candidate.includes(`${sep}assets${sep}`)
+            ? 'no-cache'
+            : 'public, max-age=31536000, immutable',
         );
         return reply.send(readFileSync(candidate));
       }

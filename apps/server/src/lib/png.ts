@@ -59,7 +59,11 @@ export function encodePng(width: number, height: number, rgba: Uint8Array): Buff
 /** 简易画布：够画出可辨识的占位图，不做抗锯齿 */
 export class Rgba {
   data: Uint8Array;
-  constructor(readonly w: number, readonly h: number, fill: [number, number, number, number] = [0, 0, 0, 0]) {
+  constructor(
+    readonly w: number,
+    readonly h: number,
+    fill: [number, number, number, number] = [0, 0, 0, 0],
+  ) {
     this.data = new Uint8Array(w * h * 4);
     if (fill.some((v) => v !== 0)) this.fillRect(0, 0, w, h, fill);
   }

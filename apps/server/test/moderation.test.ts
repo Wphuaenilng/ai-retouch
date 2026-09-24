@@ -55,9 +55,9 @@ after(() => {
 
 describe('审核故障时的取向', () => {
   it('请求抛异常：上传放行、成品拒绝，且错误码说"服务不可用"而不是"违规"', async () => {
-    globalThis.fetch = (async () => {
+    globalThis.fetch = async () => {
       throw new TypeError('fetch failed');
-    });
+    };
     assert.equal((await checkImage(ROW, 'upload')).safe, true);
     assert.equal((await checkImage(ROW, 'result')).safe, false);
     assert.equal(await code(() => assertImageSafe(ROW, 'result')), 'MODERATION_UNAVAILABLE');
@@ -65,9 +65,9 @@ describe('审核故障时的取向', () => {
   });
 
   it('上游 5xx 与返回读不懂算同一类：都不放行成品', async () => {
-    globalThis.fetch = (async () => new Response('boom', { status: 503 }));
+    globalThis.fetch = async () => new Response('boom', { status: 503 });
     assert.equal((await checkImage(ROW, 'result')).degraded, true);
-    globalThis.fetch = (async () => new Response('not json at all', { status: 200 }));
+    globalThis.fetch = async () => new Response('not json at all', { status: 200 });
     assert.equal((await checkImage(ROW, 'result')).degraded, true);
     assert.equal(await code(() => assertImageSafe(ROW, 'result')), 'MODERATION_UNAVAILABLE');
     restore();
@@ -75,7 +75,7 @@ describe('审核故障时的取向', () => {
 
   it('真判定为违规时给 MODERATION_REJECTED，两个阶段都挡', async () => {
     const body = JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: false, reason: '涉黄' }) } }] });
-    globalThis.fetch = (async () => new Response(body, { status: 200 }));
+    globalThis.fetch = async () => new Response(body, { status: 200 });
     assert.equal((await checkImage(ROW, 'result')).safe, false);
     assert.equal((await checkImage(ROW, 'result')).degraded, undefined);
     assert.equal(await code(() => assertImageSafe(ROW, 'upload')), 'MODERATION_REJECTED');
@@ -84,7 +84,7 @@ describe('审核故障时的取向', () => {
 
   it('判定通过就放行', async () => {
     const body = JSON.stringify({ choices: [{ message: { content: JSON.stringify({ safe: true }) } }] });
-    globalThis.fetch = (async () => new Response(body, { status: 200 }));
+    globalThis.fetch = async () => new Response(body, { status: 200 });
     assert.equal((await checkImage(ROW, 'result')).safe, true);
     restore();
   });

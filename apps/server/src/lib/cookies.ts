@@ -17,13 +17,7 @@ export function parseCookies(header: string | undefined): Record<string, string>
 }
 
 export function serializeSessionCookie(token: string, maxAgeSec: number): string {
-  const parts = [
-    `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
-    'Path=/',
-    'HttpOnly',
-    'SameSite=Lax',
-    `Max-Age=${maxAgeSec}`,
-  ];
+  const parts = [`${SESSION_COOKIE}=${encodeURIComponent(token)}`, 'Path=/', 'HttpOnly', 'SameSite=Lax', `Max-Age=${maxAgeSec}`];
   if (config_secure()) parts.push('Secure');
   return parts.join('; ');
 }

@@ -71,7 +71,15 @@ export function ToolForm({
       return (
         <div className="field" key={f.key}>
           <label>{f.label}</label>
-          <div className="hint">{f.needsSelection ? (hasSelection ? '已使用当前选区' : f.hint ?? '需要先有选区') : hasImage ? '使用当前图片' : (f.hint ?? '需要先有一张图')}</div>
+          <div className="hint">
+            {f.needsSelection
+              ? hasSelection
+                ? '已使用当前选区'
+                : (f.hint ?? '需要先有选区')
+              : hasImage
+                ? '使用当前图片'
+                : (f.hint ?? '需要先有一张图')}
+          </div>
         </div>
       );
     }
@@ -148,8 +156,18 @@ export function ToolForm({
         <div className="field" key={f.key}>
           <label>{f.label}</label>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input type="color" style={{ width: 44, flex: 'none' }} value={/^#[0-9a-f]{6}$/i.test(String(v)) ? String(v) : '#ffffff'} onChange={(e) => set(f.key, e.target.value)} />
-            <input className="input" placeholder="#ffffff 留空则不启用" value={String(v ?? '')} onChange={(e) => set(f.key, e.target.value)} />
+            <input
+              type="color"
+              style={{ width: 44, flex: 'none' }}
+              value={/^#[0-9a-f]{6}$/i.test(String(v)) ? String(v) : '#ffffff'}
+              onChange={(e) => set(f.key, e.target.value)}
+            />
+            <input
+              className="input"
+              placeholder="#ffffff 留空则不启用"
+              value={String(v ?? '')}
+              onChange={(e) => set(f.key, e.target.value)}
+            />
           </div>
           {f.hint && <div className="hint">{f.hint}</div>}
         </div>

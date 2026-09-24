@@ -51,14 +51,7 @@ export function mul(m: Mat, n: Mat): Mat {
 export function invert(m: Mat): Mat {
   const det = m[0] * m[3] - m[1] * m[2];
   if (!det || !Number.isFinite(det)) return IDENTITY;
-  return [
-    m[3] / det,
-    -m[1] / det,
-    -m[2] / det,
-    m[0] / det,
-    (m[2] * m[5] - m[3] * m[4]) / det,
-    (m[1] * m[4] - m[0] * m[5]) / det,
-  ];
+  return [m[3] / det, -m[1] / det, -m[2] / det, m[0] / det, (m[2] * m[5] - m[3] * m[4]) / det, (m[1] * m[4] - m[0] * m[5]) / det];
 }
 
 export function applyToPoint(m: Mat, p: { x: number; y: number }): { x: number; y: number } {

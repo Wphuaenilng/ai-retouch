@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { Image as KImage, Group as KGroup, Layer as KLayer, Rect as KRect, Stage, Transformer as KTransformer } from 'react-konva';
+import {
+  Image as KImage,
+  Group as KGroup,
+  Layer as KLayer,
+  Rect as KRect,
+  Stage,
+  Transformer as KTransformer,
+} from 'react-konva';
 import type Konva from 'konva';
 import type { DocLayer } from '@retouch/shared';
 import { centerPivot } from '../../lib/artboard';
@@ -293,7 +300,17 @@ function CompareOverlay({
           pointerEvents: 'none',
         }}
       />
-      <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${pos}%`, width: 1, background: 'rgba(233,233,229,.85)', pointerEvents: 'none' }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: `${pos}%`,
+          width: 1,
+          background: 'rgba(233,233,229,.85)',
+          pointerEvents: 'none',
+        }}
+      />
       <span className="cmp-tag l" style={{ position: 'absolute', top: 8, left: 8 }}>
         原图
       </span>
@@ -347,7 +364,7 @@ export function CanvasView({
   /** 变换手柄的配色跟着 tokens 走，别在组件里散落硬编码色值 */
   const handleColors = useMemo(() => {
     const css = typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement) : null;
-    const v = (name: string, fallback: string): string => (css?.getPropertyValue(name).trim() || fallback);
+    const v = (name: string, fallback: string): string => css?.getPropertyValue(name).trim() || fallback;
     return { border: v('--line', '#5A5F66'), anchor: v('--red', '#B9432A') };
   }, []);
 
@@ -373,7 +390,7 @@ export function CanvasView({
       scaleX: fixed.scaleX,
       scaleY: fixed.scaleY,
       // 归一化到 (-180,180]：不改变矩阵，只是别让角度一路累加
-      rotation: ((fixed.rotation % 360) + 540) % 360 - 180,
+      rotation: (((fixed.rotation % 360) + 540) % 360) - 180,
     });
   };
 
@@ -385,7 +402,14 @@ export function CanvasView({
   useEffect(() => {
     const editable = (t: EventTarget | null): boolean => {
       const el = t as HTMLElement | null;
-      return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || el.tagName === 'BUTTON' || el.isContentEditable);
+      return (
+        !!el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.tagName === 'BUTTON' ||
+          el.isContentEditable)
+      );
     };
     const dn = (e: KeyboardEvent): void => {
       if (e.code !== 'Space' || e.repeat || editable(e.target)) return;
@@ -539,7 +563,14 @@ export function CanvasView({
                 height={canvas.height}
                 fillLinearGradientStartPoint={{ x: 0, y: 0 }}
                 fillLinearGradientEndPoint={{ x: canvas.width, y: canvas.height }}
-                fillLinearGradientColorStops={[0, `rgba(0,0,0,${vignette * 0.5})`, 0.5, 'rgba(0,0,0,0)', 1, `rgba(0,0,0,${vignette * 0.5})`]}
+                fillLinearGradientColorStops={[
+                  0,
+                  `rgba(0,0,0,${vignette * 0.5})`,
+                  0.5,
+                  'rgba(0,0,0,0)',
+                  1,
+                  `rgba(0,0,0,${vignette * 0.5})`,
+                ]}
               />
             )}
             {fade > 0 && <KRect width={canvas.width} height={canvas.height} fill={`rgba(233,233,229,${fade * 0.28})`} />}
@@ -596,7 +627,9 @@ export function CanvasView({
           <Icon name="i-expand" className="ic sm" />
         </button>
         <button className="icbtn" title="回到 100%（⌘/Ctrl+1）" onClick={() => setViewport({ scale: 1 })}>
-          <span className="mono" style={{ fontSize: 10 }}>1:1</span>
+          <span className="mono" style={{ fontSize: 10 }}>
+            1:1
+          </span>
         </button>
         <button
           className={`icbtn ${tool === 'brush' ? 'on' : ''}`}
