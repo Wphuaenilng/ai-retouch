@@ -18,6 +18,8 @@ handle.exec('PRAGMA busy_timeout = 5000');
 
 type Param = string | number | bigint | null | Uint8Array;
 
+export type DbHandle = DatabaseSync;
+
 /** node:sqlite 不接受 undefined 与 boolean，统一在这里收口 */
 function clean(v: unknown): Param {
   if (v === undefined || v === null) return null;

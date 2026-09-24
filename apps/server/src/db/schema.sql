@@ -1,3 +1,7 @@
+-- ⚠️ 这是**基线**，只在 user_version=0 的新库上执行一次。
+-- 之后任何 DDL（加列、加索引、改约束）都往 src/db/migrate.ts 的 MIGRATIONS 尾部追加一条；
+-- 改这个文件对已存在的库不会重放，只会让新库和老库悄悄长得不一样。
+--
 -- retouch-studio 业务表（SQLite 方言；生产换 Postgres 时 TEXT 存 JSON 的列改 JSONB）
 -- PRAGMA 在 src/db/index.ts 里设置，不放在这里，避免 exec 的返回值干扰
 
