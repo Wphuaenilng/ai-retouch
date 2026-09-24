@@ -328,7 +328,7 @@ export function EditorPage(): ReactElement {
   useEvent('quota.changed', (e) => setMe((m) => (m ? { ...m, quota: e.quota } : m)));
 
   const onMaskChange = useCallback(
-    (canvas: HTMLCanvasElement | null): void => {
+    (canvas: HTMLCanvasElement | null, kind: 'brush' | 'rect' = 'brush'): void => {
       const seq = (maskSeq.current += 1);
       if (!canvas) {
         maskImageId.current = null;
@@ -352,7 +352,7 @@ export function EditorPage(): ReactElement {
           if (seq !== maskSeq.current) return;
           maskImageId.current = r.mask.id;
           setHasSelection(true);
-          commit((c) => ({ ...c, selection: { kind: 'brush', maskImageId: r.mask.id } }));
+          commit((c) => ({ ...c, selection: { kind, maskImageId: r.mask.id } }));
           flash('选区已就绪，可以执行消除或局部替换', true);
         } catch (e) {
           if (seq === maskSeq.current) flash(errorText(e));

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type Konva from 'konva';
-import type { DocCanvas, DocumentDTO } from '@retouch/shared';
+import type { DocCanvas, DocLayer, DocumentDTO } from '@retouch/shared';
 
 const HISTORY_CAP = 50;
 
@@ -48,6 +48,7 @@ interface EditorState {
   removeLayer: (id: string) => void;
   moveLayer: (id: string, dir: -1 | 1) => void;
   setLayerOpacity: (id: string, opacity: number) => void;
+  setLayerTransform: (id: string, t: DocLayer['transform']) => void;
 }
 
 const clone = (c: DocCanvas): DocCanvas => JSON.parse(JSON.stringify(c)) as DocCanvas;
@@ -203,6 +204,15 @@ export const useEditor = create<EditorState>((set, get) => ({
     get().commit((c) => ({
       ...c,
       layers: c.layers.map((l) => (l.id === id ? { ...l, opacity: Math.max(0, Math.min(1, opacity)) } : l)),
+    })),
+
+  /** Transformer 拖完一次 = 一步可撤销的历史 */
+  setLayerTransform: (id, t) =>
+    get().commit((c) => ({
+      ...c,
+      layers: c.layers.map((l) =>
+        l.id === id ? { ...l, transform: { x: t.x, y: t.y, scaleX: t.scaleX, scaleY: t.scaleY, rotation: t.rotation } } : l,
+      ),
     })),
 }));
 

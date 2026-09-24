@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { Image as KImage, Group as KGroup, Layer as KLayer, Rect as KRect, Stage } from 'react-konva';
+import { Image as KImage, Group as KGroup, Layer as KLayer, Rect as KRect, Stage, Transformer as KTransformer } from 'react-konva';
 import type Konva from 'konva';
 import type { DocLayer } from '@retouch/shared';
+import { centerPivot } from '../../lib/artboard';
 import { filterPropsFor } from '../../lib/clientTools';
 import { setArtHandle, useEditor, type Viewport } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
@@ -49,7 +50,14 @@ const BLEND: Record<DocLayer['blend'], 'source-over' | 'multiply' | 'screen'> = 
   screen: 'screen',
 };
 
-function LayerNode({ layer }: { layer: DocLayer }): ReactElement | null {
+/** 图层节点登记表：稳定引用，避免每次渲染都新建回调导致滤镜缓存被反复重烘 */
+interface NodeRegistry {
+  set: (id: string, node: Konva.Image) => void;
+  drop: (id: string, node: Konva.Image | null) => void;
+  get: (id: string) => Konva.Image | undefined;
+}
+
+function LayerNode({ layer, registry }: { layer: DocLayer; registry: NodeRegistry }): ReactElement | null {
   const img = useImage(layer.imageId ? `/api/images/${layer.imageId}` : null);
   const { filters, props } = filterPropsFor(layer.adjust);
   const ref = useRef<Konva.Image>(null);
@@ -62,7 +70,9 @@ function LayerNode({ layer }: { layer: DocLayer }): ReactElement | null {
     node.clearCache();
     if (filtered) node.cache();
     node.getLayer()?.batchDraw();
-  }, [filtered, img]);
+    registry.set(layer.id, node);
+    return () => registry.drop(layer.id, node);
+  }, [filtered, img, layer.id, registry]);
 
   if (!img || !layer.visible) return null;
   return (
@@ -83,12 +93,18 @@ function LayerNode({ layer }: { layer: DocLayer }): ReactElement | null {
   );
 }
 
+/** 拖出来的矩形（起点/终点无序） */
+function rectOf(a: { x: number; y: number }, b: { x: number; y: number }): { x: number; y: number; w: number; h: number } {
+  return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), w: Math.abs(b.x - a.x), h: Math.abs(b.y - a.y) };
+}
+
 /** 遮罩笔刷画布：坐标直接用图片像素空间，导出即上游要的 mask */
 function MaskLayer({
   width,
   height,
   box,
   active,
+  mode,
   space,
   size,
   clearToken,
@@ -98,13 +114,17 @@ function MaskLayer({
   height: number;
   box: { left: number; top: number; w: number; h: number };
   active: boolean;
+  /** pen=涂抹，rect=拖一个矩形框选；两者写进同一张 mask 画布 */
+  mode: 'brush' | 'rect';
   space: boolean;
   size: number;
   clearToken: number;
-  onExport: (canvas: HTMLCanvasElement | null) => void;
+  onExport: (canvas: HTMLCanvasElement | null, kind: 'brush' | 'rect') => void;
 }): ReactElement {
   const ref = useRef<HTMLCanvasElement>(null);
   const drawing = useRef<{ x: number; y: number } | null>(null);
+  const rectStart = useRef<{ x: number; y: number } | null>(null);
+  const snapshot = useRef<ImageData | null>(null);
 
   // × 清空必须真的擦掉像素，否则涂痕还留在画布上、只是不再上传
   useEffect(() => {
@@ -159,24 +179,59 @@ function MaskLayer({
       onPointerDown={(e) => {
         if (!painting()) return;
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        drawing.current = null;
         const p = toCanvas(e);
+        if (mode === 'rect') {
+          const ctx = ref.current!.getContext('2d');
+          snapshot.current = ctx?.getImageData(0, 0, width, height) ?? null;
+          rectStart.current = p;
+          return;
+        }
+        drawing.current = null;
         stroke(null, p);
         drawing.current = p;
       }}
       onPointerMove={(e) => {
-        if (!painting() || !drawing.current) return;
+        if (!painting()) return;
         const p = toCanvas(e);
+        if (mode === 'rect') {
+          if (!rectStart.current) return;
+          const ctx = ref.current!.getContext('2d');
+          if (!ctx || !snapshot.current) return;
+          // 预览：回到按下时的快照再叠一层半透明白，松手才落成实心 mask
+          ctx.putImageData(snapshot.current, 0, 0);
+          ctx.fillStyle = 'rgba(255,255,255,0.55)';
+          const r = rectOf(rectStart.current, p);
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+          return;
+        }
+        if (!drawing.current) return;
         stroke(drawing.current, p);
         drawing.current = p;
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
         if (!painting()) return;
+        if (mode === 'rect') {
+          const start = rectStart.current;
+          rectStart.current = null;
+          snapshot.current = null;
+          if (!start) return;
+          const p = toCanvas(e);
+          const r = rectOf(start, p);
+          if (r.w < 2 || r.h < 2) return; // 当成误点，不清空也不新增
+          const ctx = ref.current!.getContext('2d');
+          if (!ctx) return;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+          onExport(ref.current, 'rect');
+          return;
+        }
         drawing.current = null;
-        onExport(ref.current);
+        onExport(ref.current, 'brush');
       }}
       onPointerCancel={() => {
         drawing.current = null;
+        rectStart.current = null;
+        snapshot.current = null;
       }}
     />
   );
@@ -254,7 +309,7 @@ export function CanvasView({
   onMaskChange,
 }: {
   tool: string;
-  onMaskChange: (canvas: HTMLCanvasElement | null) => void;
+  onMaskChange: (canvas: HTMLCanvasElement | null, kind?: 'brush' | 'rect') => void;
 }): ReactElement {
   const doc = useEditor((s) => s.doc);
   const viewport = useEditor((s) => s.viewport);
@@ -271,6 +326,56 @@ export function CanvasView({
   const [grab, setGrab] = useState(false);
   const [maskClear, setMaskClear] = useState(0);
   const drag = useRef<{ px: number; py: number; x: number; y: number } | null>(null);
+  /** 正在拖手柄：把容器上的平移让开 */
+  const transforming = useRef(false);
+  const setLayerTransform = useEditor((s) => s.setLayerTransform);
+  const nodes = useRef(new Map<string, Konva.Image>());
+  const registry = useMemo<NodeRegistry>(
+    () => ({
+      set: (id, node) => {
+        nodes.current.set(id, node);
+      },
+      drop: (id, node) => {
+        if (nodes.current.get(id) === node) nodes.current.delete(id);
+      },
+      get: (id) => nodes.current.get(id),
+    }),
+    [],
+  );
+  const [target, setTarget] = useState<Konva.Image | null>(null);
+
+  /** 变换手柄的配色跟着 tokens 走，别在组件里散落硬编码色值 */
+  const handleColors = useMemo(() => {
+    const css = typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement) : null;
+    const v = (name: string, fallback: string): string => (css?.getPropertyValue(name).trim() || fallback);
+    return { border: v('--line', '#5A5F66'), anchor: v('--red', '#B9432A') };
+  }, []);
+
+  useEffect(() => {
+    const id = doc?.canvas.activeLayerId;
+    setTarget(id ? (registry.get(id) ?? null) : null);
+  }, [doc?.canvas.activeLayerId, doc?.canvas.layers, registry]);
+
+  /** Konva 绕节点原点做变换；回写前把中心拉回原位，数学部分见 test/artboard.test.ts */
+  const onTransformEnd = (): void => {
+    const canvas0 = useEditor.getState().doc?.canvas;
+    const id = canvas0?.activeLayerId;
+    if (!target || !id) return;
+    const layer = canvas0?.layers.find((l) => l.id === id);
+    if (!layer) return;
+    const image = target.image() as HTMLImageElement | undefined;
+    const size = { w: image?.naturalWidth ?? 0, h: image?.naturalHeight ?? 0 };
+    const naive = { x: target.x(), y: target.y(), scaleX: target.scaleX(), scaleY: target.scaleY(), rotation: target.rotation() };
+    const fixed = size.w > 0 && size.h > 0 ? centerPivot(layer.transform, size, naive) : naive;
+    setLayerTransform(id, {
+      x: fixed.x,
+      y: fixed.y,
+      scaleX: fixed.scaleX,
+      scaleY: fixed.scaleY,
+      // 归一化到 (-180,180]：不改变矩阵，只是别让角度一路累加
+      rotation: ((fixed.rotation % 360) + 540) % 360 - 180,
+    });
+  };
 
   useEffect(() => {
     setArtHandle(artRef.current);
@@ -355,7 +460,7 @@ export function CanvasView({
     const y = e.clientY - r.top;
     const inside = x >= art.left && x <= art.left + art.w && y >= art.top && y <= art.top + art.h;
     if (!inside) return true;
-    return tool !== 'brush' && !compare;
+    return tool !== 'brush' && tool !== 'rect' && !compare;
   };
 
   const onWheel = (e: WheelEvent): void => {
@@ -405,15 +510,17 @@ export function CanvasView({
       }}
       onPointerMove={(e) => {
         const d = drag.current;
-        if (!d) return;
+        if (!d || transforming.current) return;
         setViewport({ x: d.x + (e.clientX - d.px), y: d.y + (e.clientY - d.py) });
       }}
       onPointerUp={() => {
         drag.current = null;
+        transforming.current = false;
         setGrab(false);
       }}
       onPointerCancel={() => {
         drag.current = null;
+        transforming.current = false;
         setGrab(false);
       }}
       onDoubleClick={() => fitViewport({ w: box.w, h: box.h })}
@@ -424,7 +531,7 @@ export function CanvasView({
         <KLayer listening={false}>
           <KGroup ref={artRef} x={art.left} y={art.top} scaleX={scale} scaleY={scale}>
             {canvas.layers.map((l) => (
-              <LayerNode key={l.id} layer={l} />
+              <LayerNode key={l.id} layer={l} registry={registry} />
             ))}
             {vignette > 0 && (
               <KRect
@@ -438,13 +545,36 @@ export function CanvasView({
             {fade > 0 && <KRect width={canvas.width} height={canvas.height} fill={`rgba(233,233,229,${fade * 0.28})`} />}
           </KGroup>
         </KLayer>
+
+        {/* 变换手柄单独一层：那一层是 listening={false}，手柄要能接事件 */}
+        <KLayer>
+          {target && tool !== 'brush' && !compare && !space && !grab && (
+            <KTransformer
+              nodes={[target]}
+              rotateEnabled
+              flipEnabled
+              anchorSize={9}
+              anchorCornerRadius={2}
+              borderStroke={handleColors.border}
+              anchorStroke={handleColors.anchor}
+              anchorFill="#141416"
+              onMouseDown={() => {
+                // 手柄按下时取消可能已经启动的平移（DOM pointerdown 比 Konva 的 mousedown 早到）
+                transforming.current = true;
+                drag.current = null;
+              }}
+              onTransformEnd={onTransformEnd}
+            />
+          )}
+        </KLayer>
       </Stage>
 
       <MaskLayer
         width={canvas.width}
         height={canvas.height}
         box={art}
-        active={tool === 'brush'}
+        active={tool === 'brush' || tool === 'rect'}
+        mode={tool === 'rect' ? 'rect' : 'brush'}
         space={space}
         size={brushSize}
         clearToken={maskClear}
@@ -477,6 +607,16 @@ export function CanvasView({
           }}
         >
           <Icon name="i-brush" className="ic sm" />
+        </button>
+        <button
+          className={`icbtn ${tool === 'rect' ? 'on' : ''}`}
+          title="框选区域（拖一个矩形，可与涂抹叠加）"
+          onClick={() => {
+            const next = tool === 'rect' ? 'hand' : 'rect';
+            useEditor.getState().setTool(next);
+          }}
+        >
+          <Icon name="i-crop" className="ic sm" />
         </button>
         {tool === 'brush' && (
           <>
