@@ -10,6 +10,8 @@ coverage/
 apps/web/dist/
 *.tsbuildinfo
 
-# 内部文档与设计稿，不入公共仓库
-docs/
-design/
+# 备份产物与缓存（不要提交，也不进镜像）
+deploy/backups/
+*.db-wal
+*.db-shm
+.eslintcache

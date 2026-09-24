@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>retouch-studio · 界面设计图 · 方向 A 暗房</title>
+<style>
+/* ============================================================
+   retouch-studio 设计图 — 方向 A「暗房 Darkroom」
+   银盐灰阶 / 等宽数字 / 接触印样 / 安全灯红只做状态色
+   本稿为静态视觉稿：文案与数据均为示意
+   ============================================================ */
+
+:root{
+  /* 银盐灰阶 —— 不是纯黑 */
+  --bg:#0E0F11;        /* 银盐黑 · 页面底 */
+  --panel:#17181B;     /* 面板 */
+  --panel-2:#1D1E22;   /* 面板 · 提一级 */
+  --panel-3:#26272B;   /* 面板 · 激活 */
+  --line:#2E3034;      /* 发丝线 */
+  --line-soft:#232529; /* 更弱的线 */
+  --ink:#E9E9E5;       /* 相纸白 · 正文 */
+  --ink-2:#BCBDC0;     /* 次级 */
+  --ink-3:#92949A;     /* 弱 · 注记（小字下限，再降看不清） */
+  /* 状态三色 —— 低饱和，取自暗房 */
+  --red:#C8503C;       /* 安全灯红 · 进行中/激活 */
+  --green:#7FA98B;     /* 定影绿 · 完成 */
+  --amber:#C79A54;     /* 琥珀 · 警告 */
+  --mono:"Cascadia Mono","IBM Plex Mono","JetBrains Mono",Consolas,"Courier New",monospace;
+  --sans:"Segoe UI","PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+}
+/* 银盐颗粒 —— 全页极轻噪点，把"近黑底"从默认脸里拉出来 */
+.grain{position:fixed;inset:0;z-index:99;pointer-events:none;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='140' height='140' filter='url(%23n)' opacity='0.7'/></svg>")}
+
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:16px;height:16px}
+.ic.lg{width:22px;height:22px}
+
+.sheet{max-width:1720px;margin:0 auto;padding:52px 40px 140px}
+
+/* ---------- 稿头 ---------- */
+.sheet-head{border-bottom:1px solid var(--line);padding-bottom:28px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:11px;letter-spacing:.22em;font-family:var(--mono)}
+.brand .mark{width:16px;height:16px;border:1.5px solid var(--ink);border-radius:3px;position:relative}
+.brand .mark::after{content:"";position:absolute;right:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:var(--red)}
+.sheet-head h1{font-size:30px;font-weight:600;letter-spacing:.01em;margin:16px 0 10px}
+.sheet-head .sub{color:var(--ink-2);font-size:13.5px;line-height:1.8;max-width:960px;margin:0}
+.sheet-head .sub b{color:var(--ink);font-weight:600}
+.sheet-head .meta{margin-top:14px;color:var(--ink-3);font-size:11px;letter-spacing:.04em}
+.legend{display:flex;gap:18px;margin-top:20px;flex-wrap:wrap}
+.legend .sw{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink-2)}
+.legend .sw i{width:12px;height:12px;border-radius:3px;border:1px solid var(--line);display:block}
+
+/* ---------- 章节 ---------- */
+.sec{margin-top:76px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;border-top:1px solid var(--line-soft);padding-top:26px}
+.sec-head .num{font-size:12px;color:var(--ink-3);letter-spacing:.16em}
+.sec-head h2{font-size:19px;font-weight:600;margin:0;letter-spacing:.01em}
+.sec-head .spec{margin-left:auto;font-size:11px;color:var(--ink-3);font-family:var(--mono)}
+.sec-note{color:var(--ink-3);font-size:12px;line-height:1.9;margin:-8px 0 20px;max-width:1100px}
+
+/* ---------- 设备框 ---------- */
+.frame{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  box-shadow:0 30px 90px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.02)}
+.frame-1440{width:1440px}
+.frame-1280{width:1280px}
+
+/* ---------- 顶栏 ---------- */
+.topbar{height:48px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 14px;
+  background:linear-gradient(#1B1C20,#161719);border-bottom:1px solid var(--line)}
+.tb-l,.tb-c,.tb-r{display:flex;align-items:center;gap:8px;min-width:0}
+.tb-r{justify-content:flex-end}
+.docname{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.save{font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.icbtn{width:30px;height:30px;display:grid;place-items:center;border-radius:6px;color:var(--ink-2);border:1px solid transparent;background:none;padding:0}
+.icbtn:hover{background:var(--panel-3);color:var(--ink)}
+.icbtn.on{background:var(--panel-3);color:var(--ink)}
+.sep{width:1px;height:18px;background:var(--line);margin:0 4px}
+.qchip{font-size:11px;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:4px 10px;white-space:nowrap}
+.avatar{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:linear-gradient(140deg,#3A3B40,#232428);display:grid;place-items:center;color:var(--ink-2)}
+
+.btn{height:32px;padding:0 14px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--ink);
+  font-size:12.5px;font-family:var(--sans);display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;cursor:default}
+.btn.primary{background:var(--ink);color:#141416;border-color:var(--ink);font-weight:600}
+.btn.ghost{color:var(--ink-2)}
+.btn.danger{border-color:rgba(200,80,60,.55);color:#D06A56}
+.btn.lg{height:38px;padding:0 18px;font-size:13px}
+.btn[disabled]{opacity:.4}
+
+/* ---------- 编辑台 ---------- */
+.ed-body{display:flex;height:756px}
+.rail{width:64px;border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;padding:8px 0;gap:2px}
+.rail .tool{height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink-3);font-size:10px;position:relative;position:relative}
+.rail .tool.on{color:var(--ink);background:var(--panel-3)}
+.rail .tool.on::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:2px;background:var(--red);border-radius:0 2px 2px 0}
+.rail .spacer{flex:1}
+
+.cv{flex:1;position:relative;background:radial-gradient(120% 90% at 50% 38%, #131417 0%, #0B0C0E 72%);display:grid;place-items:center;overflow:hidden}
+.cv-art{position:relative;width:496px;height:620px}
+.cv-art>img{width:100%;height:100%;object-fit:cover;display:block;clip-path:inset(0 0 2.6% 0)}
+.tf{position:absolute;inset:-1px;pointer-events:none}
+.tf span{position:absolute;width:13px;height:13px;border:1.5px solid rgba(233,233,229,.92)}
+.tf .tl{left:0;top:0;border-right:none;border-bottom:none}
+.tf .tr{right:0;top:0;border-left:none;border-bottom:none}
+.tf .bl{left:0;bottom:0;border-right:none;border-top:none}
+.tf .br{right:0;bottom:0;border-left:none;border-top:none}
+.layer-tag{position:absolute;left:0;top:-26px;font-size:10.5px;color:var(--ink-2);letter-spacing:.04em;white-space:nowrap}
+.zoom-chip{position:absolute;right:14px;bottom:12px;font-size:10.5px;color:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:4px 9px;background:rgba(23,24,27,.8)}
+
+.side{width:340px;border-left:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column}
+.panel-h{height:38px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--line-soft);font-size:11px;color:var(--ink-2);letter-spacing:.14em}
+.panel-h .tag{margin-left:auto;font-size:10px;color:var(--ink-3);border:1px solid var(--line);border-radius:4px;padding:2px 6px;letter-spacing:.02em}
+.chat{flex:1;display:flex;flex-direction:column;min-height:0}
+.chat-body{flex:1;overflow:hidden;padding:12px;display:flex;flex-direction:column;gap:12px}
+.msg-u{margin-left:auto;max-width:88%;background:var(--panel-3);border:1px solid var(--line);border-radius:10px 10px 3px 10px;
+  padding:8px 11px;font-size:12.5px;line-height:1.7;color:var(--ink)}
+.msg-a{font-size:11.5px;color:var(--ink-3);letter-spacing:.02em;padding-left:2px}
+
+.plan{border:1px solid var(--line);border-radius:10px;background:var(--panel-2);overflow:hidden}
+.step{display:flex;gap:10px;padding:9px 11px;border-bottom:1px dashed var(--line-soft);align-items:flex-start}
+.step:last-of-type{border-bottom:none}
+.st{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;flex:none;margin-top:1px;font-size:10px;line-height:1}
+.st.done{border-color:var(--green);color:var(--green)}
+.st.run{border-color:var(--red);color:var(--red);animation:pulse 1.4s ease-in-out infinite}
+.st.wait{color:var(--ink-3);border-color:var(--line)}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(200,80,60,.35)}50%{box-shadow:0 0 0 4px rgba(200,80,60,0)}}
+.step-main{min-width:0;flex:1}
+.step-name{font-size:12.5px;color:var(--ink);line-height:1.5}
+.step-name .t{color:var(--ink-3);font-weight:400}
+.step-meta{margin-top:2px;font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+.step-meta .c{color:var(--ink-2)}
+.plan-foot{display:flex;align-items:center;gap:10px;padding:8px 11px;background:#15161A;border-top:1px solid var(--line);font-size:10.5px;color:var(--ink-3)}
+.plan-foot .sp{flex:1}
+
+.chat-in{margin:10px 12px 12px;display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;
+  padding:9px 11px;color:var(--ink-3);font-size:12.5px;background:var(--bg)}
+.chat-in .sp{flex:1}
+
+.layers{border-top:1px solid var(--line);height:236px;display:flex;flex-direction:column}
+.lrow{display:flex;align-items:center;gap:8px;padding:0 10px;height:40px;font-size:12px;border-bottom:1px solid var(--line-soft);color:var(--ink)}
+.lrow.on{background:var(--panel-3)}
+.lrow.off{opacity:.42}
+.lrow .thumb{width:26px;height:26px;border-radius:4px;overflow:hidden;border:1px solid var(--line);flex:none}
+.lrow .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.lrow .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lrow .val{margin-left:auto;color:var(--ink-3);font-size:10.5px;flex:none}
+.layers-foot{height:30px;display:flex;align-items:center;gap:12px;padding:0 10px;font-size:10.5px;color:var(--ink-3)}
+
+/* ---------- 胶片条 ---------- */
+.strip{height:96px;border-top:1px solid var(--line);background:#101114;display:flex;align-items:stretch;position:relative;overflow:hidden}
+.sprockets{position:absolute;left:0;right:0;height:6px;background:repeating-linear-gradient(90deg,#090A0B 0 7px,transparent 7px 24px);opacity:.95}
+.sprockets.t{top:5px}.sprockets.b{bottom:5px}
+.strip-label{width:118px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:0 14px;border-right:1px solid var(--line);font-size:9.5px;color:var(--ink-3);letter-spacing:.16em;font-family:var(--mono)}
+.thumbs{display:flex;gap:14px;align-items:center;padding:12px 16px;flex:1;overflow:hidden}
+.thumb{display:flex;flex-direction:column;gap:5px;align-items:center;position:relative}
+.thumb .ph{width:64px;height:64px;border-radius:4px;overflow:hidden;border:1px solid var(--line);position:relative;background:#000}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .cap{font-size:9.5px;color:var(--ink-3);letter-spacing:.03em;white-space:nowrap}
+.thumb.on .ph{outline:1.5px solid var(--ink);outline-offset:1px}
+.thumb.add .ph{border-style:dashed;display:grid;place-items:center;color:var(--ink-3)}
+.thumb.dev img{filter:saturate(.35) brightness(.85)}
+.thumb.dev .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 28%,rgba(233,233,229,.16) 50%,transparent 72%);animation:sweep 1.7s linear infinite}
+@keyframes sweep{from{transform:translateX(-72%)}to{transform:translateX(72%)}}
+.thumb.dev .pct{position:absolute;inset:0;display:grid;place-items:center;font-size:10px;color:var(--ink);background:rgba(14,15,17,.35)}
+
+/* ---------- 工具箱 ---------- */
+.tb-body{display:flex;height:752px}
+.tool-list{width:240px;border-right:1px solid var(--line);background:var(--panel);padding:12px 10px;overflow:hidden}
+.tl-group{font-size:9.5px;color:var(--ink-3);letter-spacing:.18em;padding:12px 10px 6px;font-family:var(--mono)}
+.tl-item{display:flex;align-items:center;gap:10px;height:44px;padding:0 11px;border-radius:8px;color:var(--ink-2);font-size:13px;position:relative}
+.tl-item.on{background:var(--panel-3);color:var(--ink)}
+.tl-item.on::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:2px;background:var(--red);border-radius:0 2px 2px 0}
+.tl-item .cost{margin-left:auto;font-size:10px;color:var(--ink-3)}
+
+.stage{flex:1;padding:22px;display:flex;flex-direction:column;gap:14px;background:#101114;min-width:0}
+.stage-h{display:flex;align-items:baseline;gap:12px}
+.stage-h h3{margin:0;font-size:15px;font-weight:600}
+.stage-h .hint{font-size:11.5px;color:var(--ink-3)}
+.stage-foot{display:flex;align-items:center;gap:10px;margin-top:auto}
+.stage-foot .link{font-size:12px;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.stage-foot .sp{flex:1}
+
+.params{width:300px;border-left:1px solid var(--line);background:var(--panel);padding:16px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field label{font-size:11px;color:var(--ink-2);letter-spacing:.08em}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg span{flex:1;text-align:center;font-size:12px;padding:8px 0;color:var(--ink-3)}
+.seg span.on{background:var(--panel-3);color:var(--ink)}
+input[type=range]{width:100%;accent-color:#C9C9C4;height:18px}
+.fld-note{font-size:11px;color:var(--ink-3);line-height:1.7}
+.kv{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink-3);border-top:1px solid var(--line-soft);padding-top:12px}
+.kv .v{margin-left:auto;color:var(--ink-2)}
+.ta-mini{border:1px solid var(--line);border-radius:7px;background:var(--bg);padding:10px 11px;font-size:12px;color:var(--ink-3);line-height:1.6}
+
+/* 对比滑杆 */
+.cmp{position:relative;width:660px;height:480px;border-radius:8px;overflow:hidden;border:1px solid var(--line);user-select:none;cursor:ew-resize;touch-action:none;--pos:58%}
+.cmp .layer{position:absolute;inset:0}
+.cmp .layer img{width:100%;height:100%;object-fit:cover;display:block;clip-path:inset(0 0 4.5% 0)}
+.cmp-before{clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.cmp-after{clip-path:inset(0 0 0 var(--pos))}
+.cmp-handle{position:absolute;top:0;bottom:0;left:var(--pos);width:1px;background:rgba(233,233,229,.85)}
+.cmp-grip{position:absolute;top:50%;left:var(--pos);transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--ink-2);display:grid;place-items:center;color:var(--ink);box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.cmp-tag{position:absolute;top:10px;font-size:10px;letter-spacing:.12em;color:var(--ink-2);background:rgba(14,15,17,.74);
+  border:1px solid var(--line);padding:4px 9px;border-radius:4px;font-family:var(--mono)}
+.cmp-tag.l{left:10px}.cmp-tag.r{right:10px}
+.wm{position:absolute;color:rgba(255,255,255,.4);font-weight:600;letter-spacing:.2em;pointer-events:none}
+.wm-corner{right:16px;bottom:22px;font-size:12px}
+.wm-diag{left:50%;top:44%;transform:translate(-50%,-50%) rotate(-24deg);font-size:34px;white-space:nowrap}
+.blob{position:absolute;right:7%;bottom:10%;width:188px;height:124px;background:rgba(233,233,229,.12);
+  border:1px dashed rgba(233,233,229,.6);border-radius:46% 54% 52% 48%/54% 46% 58% 42%}
+
+/* ---------- 文生图 ---------- */
+.t2i{display:flex;height:752px}
+.prompt-col{width:420px;border-right:1px solid var(--line);background:var(--panel);padding:20px;display:flex;flex-direction:column;gap:18px}
+.ta{border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:12px 13px;font-size:13px;line-height:1.8;color:var(--ink);min-height:112px}
+.ta .ph{color:var(--ink-3)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:11.5px;padding:6px 13px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2)}
+.chip.on{background:var(--panel-3);color:var(--ink);border-color:var(--ink-2)}
+.cand-area{flex:1;padding:22px;display:flex;flex-direction:column;gap:14px;background:#101114;min-width:0}
+.cand-grid{width:640px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#000}
+.cand-grid img{width:100%;display:block}
+.cand-meta{display:flex;align-items:center;gap:12px;font-size:11px;color:var(--ink-3)}
+.cand-meta .sp{flex:1}
+
+/* ---------- 计划卡片规格 ---------- */
+.spec-wrap{display:flex;gap:64px;align-items:flex-start}
+.anno-col{position:relative;padding-right:236px}
+.sp-card{width:520px;border:1px solid var(--line);border-radius:12px;background:var(--panel);overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.45)}
+.sp-card .hd{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line-soft);font-size:12px;color:var(--ink-2)}
+.sp-card .hd .sp{flex:1}
+.sp-card .step{padding:11px 14px}
+.sp-card .step-name{font-size:13px}
+.sp-card .foot{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#15161A;border-top:1px solid var(--line);font-size:11px;color:var(--ink-3)}
+.sp-card .foot .sp{flex:1}
+.err-line{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:11.5px;color:#D8B27A;background:rgba(199,154,84,.08);border-top:1px solid rgba(199,154,84,.22)}
+.legend-dots{display:flex;flex-direction:column;gap:9px;font-size:11px;color:var(--ink-2)}
+.legend-dots .r{display:flex;align-items:center;gap:8px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.d-red{background:var(--red)}.d-green{background:var(--green)}.d-gray{background:var(--ink-3)}.d-amber{background:var(--amber)}
+
+/* ---------- 移动端 ---------- */
+.phones{display:flex;gap:200px;padding:8px 0 8px 150px;flex-wrap:nowrap;width:max-content}
+.phone{width:390px;height:844px;border-radius:44px;border:1px solid var(--line);background:var(--panel);overflow:hidden;
+  position:relative;box-shadow:0 34px 80px rgba(0,0,0,.55)}
+.pstat{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:12px;color:var(--ink-2)}
+.phead{display:flex;align-items:center;gap:10px;padding:6px 20px 14px;font-size:17px;font-weight:600}
+.phead .chip{margin-left:auto;font-size:10.5px;padding:4px 10px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:0 20px}
+.pcell{height:86px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;color:var(--ink-2);font-size:11px}
+.pcell.on{border-color:var(--ink-2);color:var(--ink);background:var(--panel-3)}
+.psec{padding:20px 20px 0;font-size:11px;color:var(--ink-3);letter-spacing:.14em;font-family:var(--mono)}
+.precent{display:flex;gap:10px;padding:10px 20px 0}
+.precent .th{width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+.precent .th img{width:100%;height:100%;object-fit:cover;display:block}
+.pbar{margin-top:auto;border-top:1px solid var(--line);background:var(--panel);display:flex;align-items:center;justify-content:space-around;height:56px}
+.pbar .pb{width:48px;height:48px;display:grid;place-items:center;border-radius:10px;color:var(--ink-2)}
+.pbar .pb.on{background:var(--panel-3);color:var(--ink)}
+.psafe{height:34px;background:var(--panel)}
+.pcol{display:flex;flex-direction:column;height:100%}
+.pbar2{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;border-bottom:1px solid var(--line-soft)}
+.pbar2 .t{font-size:13.5px;font-weight:600}
+.pbar2 .sp{flex:1}
+.pcanvas{flex:1;background:radial-gradient(120% 90% at 50% 40%,#131417 0%,#0B0C0E 72%);display:grid;place-items:center;position:relative;overflow:hidden}
+.pcanvas img{width:78%;border-radius:6px;display:block;clip-path:inset(0 0 2.6% 0);box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.pzoom{position:absolute;right:12px;bottom:10px;font-size:10px;color:var(--ink-2);border:1px solid var(--line);border-radius:6px;padding:3px 8px;background:rgba(23,24,27,.8);font-family:var(--mono)}
+.psheet{border-top:1px solid var(--line);background:var(--panel);padding:8px 0 4px;display:flex;flex-direction:column;gap:8px}
+.psheet .handle{width:38px;height:4px;border-radius:2px;background:var(--line);margin:0 auto}
+.psheet .lbl{text-align:center;font-size:11px;color:var(--ink-3);letter-spacing:.1em;padding-bottom:4px}
+
+/* ---------- 标注（制图尺寸线） ---------- */
+.anno-wrap{position:relative}
+.vdim{position:absolute;width:0;border-left:1px solid var(--line)}
+.vdim::before,.vdim::after{content:"";position:absolute;left:-4px;width:8px;height:1px;background:var(--line)}
+.vdim::before{top:0}.vdim::after{bottom:0}
+.vdim>span{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:10.5px;color:var(--ink-3);
+  font-family:var(--mono);white-space:nowrap;line-height:1.5}
+.hdim{position:absolute;height:0;border-top:1px solid var(--line)}
+.hdim::before,.hdim::after{content:"";position:absolute;top:-4px;width:1px;height:8px;background:var(--line)}
+.hdim::before{left:0}.hdim::after{right:0}
+.hdim>span{position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:10.5px;color:var(--ink-3);
+  font-family:var(--mono);white-space:nowrap;background:var(--bg);padding:0 7px}
+.callout{position:absolute;font-size:10.5px;color:var(--ink-3);line-height:1.7;font-family:var(--mono);white-space:nowrap}
+.callout b{color:var(--ink-2);font-weight:600}
+.leader{position:absolute;border-color:var(--line);border-style:solid}
+.leader::after{content:"";position:absolute;left:-2px;top:-2px;width:4px;height:4px;border-radius:50%;background:var(--ink-3)}
+.leader.tr::after{left:auto;right:-2px;top:-2px}
+.spec-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.spec-strip span{font-size:10.5px;color:var(--ink-3);font-family:var(--mono);border:1px solid var(--line-soft);
+  border-radius:5px;padding:5px 9px;background:var(--panel)}
+
+/* ---------- 规范 tokens ---------- */
+.tok-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.tok{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:18px}
+.tok h4{margin:0 0 14px;font-size:12px;color:var(--ink-2);letter-spacing:.14em;font-family:var(--mono);font-weight:500}
+.sw-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.sw-item{display:flex;flex-direction:column;gap:8px}
+.sw{height:52px;border-radius:7px;border:1px solid var(--line-soft)}
+.sw-name{font-size:10.5px;color:var(--ink-2);line-height:1.5}
+.sw-name em{display:block;font-style:normal;color:var(--ink-3);font-family:var(--mono);font-size:10px}
+.tscale{display:flex;flex-direction:column;gap:12px}
+.ts-row{display:flex;align-items:baseline;gap:16px;border-bottom:1px dashed var(--line-soft);padding-bottom:11px}
+.ts-row:last-child{border-bottom:none;padding-bottom:0}
+.ts-row .smp{color:var(--ink)}
+.ts-row .spec{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--ink-3);white-space:nowrap}
+.bars{display:flex;align-items:flex-end;gap:12px;height:74px}
+.bars .b{background:var(--panel-3);border:1px solid var(--line);border-radius:3px 3px 0 0;position:relative}
+.bars .b span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.radii{display:flex;gap:16px;align-items:center}
+.radii .r{width:60px;height:44px;border:1px solid var(--ink-2);background:var(--panel-2);position:relative}
+.radii .r span{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.dev-strip{display:flex;gap:14px;align-items:center}
+.dev-strip .f{width:104px;height:130px;border-radius:6px;overflow:hidden;border:1px solid var(--line);position:relative}
+.dev-strip .f img{width:100%;height:100%;object-fit:cover;display:block}
+.dev-strip .f .c{position:absolute;left:0;right:0;bottom:0;background:rgba(14,15,17,.78);font-family:var(--mono);font-size:9.5px;color:var(--ink-2);padding:3px 7px}
+.dev-strip .arr{color:var(--ink-3)}
+.pstates{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+.pstate{display:flex;align-items:center;gap:12px}
+.pbar-demo{flex:1;height:4px;background:var(--panel-3);border-radius:2px;position:relative;overflow:hidden}
+.pbar-demo i{position:absolute;left:0;top:0;bottom:0;background:var(--red);border-radius:2px}
+.pstate .n{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);width:78px;white-space:nowrap}
+.icon-row{display:flex;gap:18px;flex-wrap:wrap}
+.icon-cell{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--ink-2);width:52px}
+.icon-cell span{font-size:9.5px;color:var(--ink-3);text-align:center;line-height:1.4}
+.btn-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.note-list{display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--ink-2);line-height:1.8}
+.note-list .k{color:var(--ink);font-family:var(--mono);font-size:11px}
+footer.foot{margin-top:88px;border-top:1px solid var(--line);padding-top:24px;color:var(--ink-3);font-size:11.5px;line-height:2;max-width:1080px}
+</style>
+</head>
+<body>
+
+<!-- ============ 图标库（1.5px 线性，24 网格） ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-adjust" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M13.5 5.5l5 5-8.5 8.5H5.5L4 17.5z"/><path d="M10 9l5 5"/></symbol>
+  <symbol id="i-cut" viewBox="0 0 24 24"><circle cx="6" cy="6.5" r="2.3"/><circle cx="6" cy="17.5" r="2.3"/><path d="M8 7.8L20 18M8 16.2L20 6"/></symbol>
+  <symbol id="i-bg" viewBox="0 0 24 24"><rect x="3.5" y="5" width="12" height="9" rx="1.5"/><rect x="8.5" y="10" width="12" height="9" rx="1.5"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/><path d="M12 8.5v7M9.5 11l2.5-2.5L14.5 11M9.5 13l2.5 2.5 2.5-2.5"/></symbol>
+  <symbol id="i-upscale" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M10.5 8v5M8 10.5h5"/><path d="M15 15l5 5"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M5 6.5V5h14v1.5M12 5v14M9 19h6"/></symbol>
+  <symbol id="i-crop" viewBox="0 0 24 24"><path d="M7 3v14h14M3 7h14v14"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3.5l8.5 4.5L12 12.5 3.5 8z"/><path d="M3.5 12.5L12 17l8.5-4.5"/></symbol>
+  <symbol id="i-heal" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 9v6M9 12h6"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M8 8L4 12l4 4"/><path d="M4 12h10a5 5 0 0 1 5 5v1"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="M16 8l4 4-4 4"/><path d="M20 12H10a5 5 0 0 0-5 5v1"/></symbol>
+  <symbol id="i-compare" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 5v14"/><path d="M9.5 10.5L7.5 12l2 1.5M14.5 10.5l2 1.5-2 1.5"/></symbol>
+  <symbol id="i-export" viewBox="0 0 24 24"><path d="M12 4v10M8.5 10.5L12 14l3.5-3.5"/><path d="M5 19h14"/></symbol>
+  <symbol id="i-import" viewBox="0 0 24 24"><path d="M12 14V4M8.5 7.5L12 4l3.5 3.5"/><path d="M5 19h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/></symbol>
+  <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 4l16 16"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5l10 6.5-10 6.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.5l3 1.5"/></symbol>
+  <symbol id="i-retry" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5V8H16"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 11.5L20 4l-6.5 16-2.3-6.2z"/><path d="M11.2 13.8L20 4"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="7" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="12" r="1.2" fill="currentColor" stroke="none"/><circle cx="9" cy="17" r="1.2" fill="currentColor" stroke="none"/><circle cx="15" cy="17" r="1.2" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="9" r="3.2"/><path d="M5.5 19.5a6.5 6.5 0 0 1 13 0"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 5L8 12l6.5 7"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<div class="grain"></div>
+
+<div class="sheet">
+
+<!-- ==================== 稿头 ==================== -->
+<header class="sheet-head">
+  <div class="brand"><span class="mark"></span>RETOUCH-STUDIO</div>
+  <h1>修图台 · 界面设计图</h1>
+  <p class="sub">
+    方向 A <b>「暗房 Darkroom」</b>。为什么是暗房：修图时界面不能给照片染色 —— 银盐级中性灰是判断色彩的正确底色；
+    安全灯红（<b>#C8503C</b>）只做状态色（进行中 / 激活），大面积保持灰阶；
+    尺寸、耗时、成本、坐标等<b>所有数字走等宽字体</b>，来自暗房计时器与接触印样的传统；
+    「接触印样」构成缩略图区与胶片条的骨架。
+    规避三条默认长相：不是纯黑 + 荧光色（银盐灰 <b>#0E0F11 → #26272B</b> 五级层次 + 低饱和三状态色）；
+    不是模板化卡片堆叠（器材导轨 / 印样网格 / 仪器读数是结构语言）；无大面积强调色块。
+  </p>
+  <div class="meta mono">v1.1 · 2026-09-21 · 方向 A 已拍板（《项目文档》§6.2）｜ 依据 §6.2–6.4 ｜ 桌面稿按 1440 / 1280 逻辑宽 1:1 绘制 ｜ 文案与数据为示意</div>
+  <div class="legend">
+    <span class="sw"><i style="background:#0E0F11"></i>银盐黑 #0E0F11</span>
+    <span class="sw"><i style="background:#17181B"></i>面板 #17181B</span>
+    <span class="sw"><i style="background:#26272B"></i>激活 #26272B</span>
+    <span class="sw"><i style="background:#E9E9E5"></i>相纸白 #E9E9E5</span>
+    <span class="sw"><i style="background:#C8503C"></i>安全灯红 #C8503C</span>
+    <span class="sw"><i style="background:#7FA98B"></i>定影绿 #7FA98B</span>
+    <span class="sw"><i style="background:#C79A54"></i>琥珀 #C79A54</span>
+  </div>
+</header>
+
+<!-- ==================== 01 编辑台 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">01</span><h2>编辑台 · 主界面</h2><span class="spec">1440 × 900 · 三栏 + 胶片条 · 对话与图层同屏</span></div>
+  <p class="sec-note">工具导轨在最左（图标 + 短标签，56px 一档）；对话与图层在右栏上下分居；底部胶片条沿用接触印样：齿孔、帧号、显影中的第 05 帧。</p>
+
+  <div class="anno-wrap" style="width:1620px">
+    <div class="frame frame-1440">
+
+      <!-- 顶栏 -->
+      <div class="topbar">
+        <div class="tb-l">
+          <span class="mark" style="width:15px;height:15px;border:1.5px solid var(--ink);border-radius:3px;position:relative"><span style="position:absolute;right:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:var(--red)"></span></span>
+          <span class="docname">街拍人像 · 未命名</span>
+          <span class="save mono">已保存 14:32</span>
+        </div>
+        <div class="tb-c">
+          <button class="icbtn" aria-label="撤销"><svg class="ic"><use href="#i-undo"/></svg></button>
+          <button class="icbtn" aria-label="重做"><svg class="ic"><use href="#i-redo"/></svg></button>
+          <span class="sep"></span>
+          <button class="icbtn" aria-label="前后对比"><svg class="ic"><use href="#i-compare"/></svg></button>
+          <button class="icbtn on" aria-label="并排查看"><svg class="ic"><use href="#i-layers"/></svg></button>
+        </div>
+        <div class="tb-r">
+          <span class="qchip mono">今日 12/30</span>
+          <span class="avatar"><svg class="ic sm"><use href="#i-user"/></svg></span>
+          <button class="btn primary"><svg class="ic sm"><use href="#i-export"/></svg>导出</button>
+        </div>
+      </div>
+
+      <!-- 工作区 -->
+      <div class="ed-body">
+        <!-- 工具导轨 -->
+        <nav class="rail">
+          <span class="tool on"><svg class="ic lg"><use href="#i-cut"/></svg>抠图</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-eraser"/></svg>消除</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-adjust"/></svg>调色</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-bg"/></svg>换背景</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-expand"/></svg>扩图</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-upscale"/></svg>超分</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-text"/></svg>文字</span>
+          <span class="tool"><svg class="ic lg"><use href="#i-crop"/></svg>裁剪</span>
+          <span class="spacer"></span>
+          <span class="tool"><svg class="ic lg"><use href="#i-import"/></svg>导入</span>
+        </nav>
+
+        <!-- 画布 -->
+        <div class="cv">
+          <div class="cv-art">
+            <span class="layer-tag mono">主体层 · 1080 × 1350 · 100%</span>
+            <img src="assets/portrait.png" alt="街拍人像">
+            <div class="tf"><span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span></div>
+          </div>
+          <span class="zoom-chip mono">适配 62%</span>
+        </div>
+
+        <!-- 侧栏：对话 + 图层 -->
+        <aside class="side">
+          <div class="chat">
+            <div class="panel-h">对 话<span class="tag mono">plan · qwen3.7-plus</span></div>
+            <div class="chat-body">
+              <div class="msg-u">把这张图背景换成米白摄影棚，裁成 1:1，整体亮一点。</div>
+              <div class="msg-a">拆成 4 步执行，前两步已完成 ——</div>
+              <div class="plan">
+                <div class="step">
+                  <span class="st done"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-check"/></svg></span>
+                  <span class="step-main">
+                    <span class="step-name">抠图并分离主体</span>
+                    <span class="step-meta mono">分割模型 · 2.1s · <span class="c">¥0.03</span></span>
+                  </span>
+                </div>
+                <div class="step">
+                  <span class="st done"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-check"/></svg></span>
+                  <span class="step-main">
+                    <span class="step-name">换背景 <span class="t">「米白摄影棚」</span></span>
+                    <span class="step-meta mono">Seedream 4.5 · 8.4s · <span class="c">¥0.26</span></span>
+                  </span>
+                </div>
+                <div class="step">
+                  <span class="st run"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-play"/></svg></span>
+                  <span class="step-main">
+                    <span class="step-name">裁剪 1:1</span>
+                    <span class="step-meta mono">本地执行 · 即时</span>
+                  </span>
+                </div>
+                <div class="step">
+                  <span class="st wait"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-clock"/></svg></span>
+                  <span class="step-main">
+                    <span class="step-name">调色 · 提亮 <span class="t">+0.15</span></span>
+                    <span class="step-meta mono">等待前序 · 无费用</span>
+                  </span>
+                </div>
+                <div class="plan-foot mono"><span>本计划 ¥0.29</span><span>今日剩余 18/30</span><span class="sp"></span><span style="color:var(--ink-2)">取消</span></div>
+              </div>
+              <div class="chat-in"><span>继续描述想怎么改，例如「再暖一点」…</span><span class="sp"></span><svg class="ic sm"><use href="#i-send"/></svg></div>
+            </div>
+          </div>
+
+          <div class="layers">
+            <div class="panel-h">图 层<span class="tag">4 个</span><span style="margin-left:auto;color:var(--ink-3)"><svg class="ic sm"><use href="#i-plus"/></svg></span></div>
+            <div class="lrow">
+              <svg class="ic sm" style="color:var(--ink-3)"><use href="#i-grip"/></svg>
+              <span class="thumb" style="display:grid;place-items:center;color:var(--ink-2)"><svg class="ic sm"><use href="#i-adjust"/></svg></span>
+              <span class="nm">调整层 · 提亮 +0.15</span><span class="val mono">80%</span>
+              <svg class="ic sm" style="color:var(--ink-2)"><use href="#i-eye"/></svg>
+            </div>
+            <div class="lrow on">
+              <svg class="ic sm" style="color:var(--ink-3)"><use href="#i-grip"/></svg>
+              <span class="thumb"><img src="assets/portrait.png" alt=""></span>
+              <span class="nm">主体层 · 抠像</span><span class="val mono">100%</span>
+              <svg class="ic sm" style="color:var(--ink-2)"><use href="#i-eye"/></svg>
+            </div>
+            <div class="lrow">
+              <svg class="ic sm" style="color:var(--ink-3)"><use href="#i-grip"/></svg>
+              <span class="thumb" style="background:#E9E9E5"></span>
+              <span class="nm">背景层 · 米白摄影棚</span><span class="val mono">100%</span>
+              <svg class="ic sm" style="color:var(--ink-2)"><use href="#i-eye"/></svg>
+            </div>
+            <div class="lrow off">
+              <svg class="ic sm" style="color:var(--ink-3)"><use href="#i-grip"/></svg>
+              <span class="thumb"><img src="assets/portrait.png" alt=""></span>
+              <span class="nm">原图</span><span class="val mono">100%</span>
+              <svg class="ic sm"><use href="#i-eyeoff"/></svg>
+            </div>
+            <div class="layers-foot mono"><span>混合 正常</span><span>不透明度 100%</span></div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- 胶片条 -->
+      <div class="strip">
+        <i class="sprockets t"></i><i class="sprockets b"></i>
+        <div class="strip-label">接 触 印 样<br>CONTACTS · 04/05</div>
+        <div class="thumbs">
+          <div class="thumb on"><span class="ph"><img src="assets/portrait.png" alt=""></span><span class="cap mono">01 原图</span></div>
+          <div class="thumb"><span class="ph"><img src="assets/portrait.png" style="filter:brightness(1.12) saturate(1.06)" alt=""></span><span class="cap mono">02 提亮 +12</span></div>
+          <div class="thumb"><span class="ph"><img src="assets/portrait.png" style="filter:grayscale(1) contrast(1.06)" alt=""></span><span class="cap mono">03 黑白</span></div>
+          <div class="thumb"><span class="ph"><img src="assets/portrait.png" style="filter:brightness(1.06) saturate(1.1)" alt=""></span><span class="cap mono">04 剪裁 1:1</span></div>
+          <div class="thumb dev"><span class="ph"><img src="assets/portrait.png" alt=""><span class="pct mono">62%</span></span><span class="cap mono">05 显影中</span></div>
+          <div class="thumb add"><span class="ph"><svg class="ic"><use href="#i-plus"/></svg></span><span class="cap mono">添加</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 尺寸标注（制图式，文字在线头一侧、不与线重叠） -->
+    <div class="vdim" style="left:1464px;top:0;height:48px"><span>48 顶栏</span></div>
+    <div class="vdim" style="left:1464px;top:48px;height:756px"><span>756 工作区</span></div>
+    <div class="vdim" style="left:1464px;top:804px;height:96px"><span>96 胶片条</span></div>
+  </div>
+  <div class="spec-strip">
+    <span>工具导轨 64 · 每档 56</span>
+    <span>画布区 1036（自适应）</span>
+    <span>侧栏 340</span>
+    <span>胶片条 96 · 缩略图 64</span>
+    <span>视口 1440 × 900</span>
+  </div>
+</section>
+
+<!-- ==================== 02 工具箱 · 消除 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">02</span><h2>工具箱 · 消除 / 去水印</h2><span class="spec">1280 × 800 · 左工具列表 · 中对比 · 右参数</span></div>
+  <p class="sec-note">涂抹要消除的内容（虚线圈为笔刷选区），松手后自动提交；结果用对比滑杆检验（可拖拽）。水印为示意叠层。</p>
+
+  <div class="frame frame-1280">
+    <div class="topbar">
+      <div class="tb-l"><span class="docname">工具箱</span><span class="save mono">4 张进行中 · 0</span></div>
+      <div class="tb-c"></div>
+      <div class="tb-r"><span class="qchip mono">今日 12/30</span><button class="btn ghost"><svg class="ic sm"><use href="#i-import"/></svg>上传新图</button></div>
+    </div>
+
+    <div class="tb-body">
+      <!-- 工具列表 -->
+      <div class="tool-list">
+        <div class="tl-group">AI 工具</div>
+        <div class="tl-item"><svg class="ic"><use href="#i-cut"/></svg>抠图<span class="cost mono">¥0.03</span></div>
+        <div class="tl-item on"><svg class="ic"><use href="#i-eraser"/></svg>消除 / 去水印<span class="cost mono">¥0.26</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-bg"/></svg>换背景<span class="cost mono">¥0.26</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-expand"/></svg>扩图<span class="cost mono">¥0.26</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-upscale"/></svg>超分 2×/4×<span class="cost mono">¥0.12</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-heal"/></svg>人像美化<span class="cost mono">¥0.08</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-text"/></svg>文字处理<span class="cost mono">¥0.26</span></div>
+        <div class="tl-group">本地工具 · 不计配额</div>
+        <div class="tl-item"><svg class="ic"><use href="#i-adjust"/></svg>调色<span class="cost mono">即时</span></div>
+        <div class="tl-item"><svg class="ic"><use href="#i-crop"/></svg>裁剪 / 变换<span class="cost mono">即时</span></div>
+      </div>
+
+      <!-- 对比 -->
+      <div class="stage">
+        <div class="stage-h"><h3>消除结果</h3><span class="hint">拖拽中线对比 · 结果可撤销、可继续编辑</span></div>
+
+        <div class="cmp" id="cmp2">
+          <div class="layer cmp-before">
+            <img src="assets/coffee.png" alt="处理前">
+            <span class="wm wm-diag">WATERMARK</span>
+            <span class="wm wm-corner mono">© SAMPLE · 2026</span>
+            <span class="blob"></span>
+          </div>
+          <div class="layer cmp-after">
+            <img src="assets/coffee.png" alt="处理后">
+          </div>
+          <span class="cmp-tag l">处理前 · 含水印</span>
+          <span class="cmp-tag r">处理后</span>
+          <div class="cmp-handle"></div>
+          <div class="cmp-grip"><svg class="ic sm"><use href="#i-compare"/></svg></div>
+        </div>
+
+        <div class="stage-foot">
+          <button class="btn ghost"><svg class="ic sm"><use href="#i-undo"/></svg>撤销该步</button>
+          <button class="btn ghost"><svg class="ic sm"><use href="#i-eraser"/></svg>重新涂抹</button>
+          <span class="sp"></span>
+          <span class="link">作为新文档打开</span>
+          <button class="btn primary"><svg class="ic sm"><use href="#i-export"/></svg>导出结果</button>
+        </div>
+      </div>
+
+      <!-- 参数 -->
+      <div class="params">
+        <div class="field">
+          <label>模式</label>
+          <div class="seg"><span class="on">涂抹</span><span>框选</span></div>
+        </div>
+        <div class="field">
+          <label>画笔大小 <span class="mono" style="color:var(--ink-3)">24px</span></label>
+          <input type="range" min="8" max="120" value="24">
+        </div>
+        <div class="field">
+          <label>硬度 <span class="mono" style="color:var(--ink-3)">60%</span></label>
+          <input type="range" min="0" max="100" value="60">
+        </div>
+        <div class="field">
+          <label>（可选）描述该区域应变成什么</label>
+          <div class="ta-mini">例：干净的木桌面，保留光影方向</div>
+        </div>
+        <div class="fld-note">涂抹即选区。提交后由图像编辑模型补全纹理，接缝处自动羽化。</div>
+        <button class="btn primary lg" style="justify-content:center"><svg class="ic sm"><use href="#i-eraser"/></svg>提交消除 · ¥0.26</button>
+        <div class="kv mono"><span>引擎</span><span class="v">Seedream 4.5</span></div>
+        <div class="kv mono"><span>上次耗时</span><span class="v">6.2s</span></div>
+        <div class="kv mono"><span>配额</span><span class="v">今日剩余 18/30</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 03 工具箱 · 文生图 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">03</span><h2>工具箱 · 文生图</h2><span class="spec">1280 × 800 · 提示词 · 四宫格候选</span></div>
+  <p class="sec-note">四宫格候选沿用印样语言；选中一张即可进入编辑台继续修。生成过程走「显影」：从低对比到全对比，不出现转圈菊花。</p>
+
+  <div class="frame frame-1280">
+    <div class="topbar">
+      <div class="tb-l"><span class="docname">工具箱 · 文生图</span><span class="save mono">候选 4 / 4</span></div>
+      <div class="tb-c"></div>
+      <div class="tb-r"><span class="qchip mono">今日 12/30</span><button class="btn ghost"><svg class="ic sm"><use href="#i-import"/></svg>上传新图</button></div>
+    </div>
+
+    <div class="t2i">
+      <div class="prompt-col">
+        <div class="field">
+          <label>提示词</label>
+          <div class="ta">晨光里的手冲咖啡与陶壶，木桌，亚麻布，胶片质感，暖色调，浅景深<span class="ph">｜继续输入以补充…</span></div>
+        </div>
+        <div class="field">
+          <label>比例</label>
+          <div class="chips"><span class="chip on">1:1</span><span class="chip">4:3</span><span class="chip">16:9</span><span class="chip">3:4</span></div>
+        </div>
+        <div class="field">
+          <label>清晰度</label>
+          <div class="chips"><span class="chip on">2K</span><span class="chip">4K · +¥0.1</span></div>
+        </div>
+        <div class="field">
+          <label>张数</label>
+          <div class="chips"><span class="chip on">4 张</span><span class="chip">2 张</span><span class="chip">1 张</span></div>
+        </div>
+        <div class="fld-note">Seedream 4.5 · 预计 20s · 一次生成 4 张候选共 ¥0.80，未选中的不保留。</div>
+        <button class="btn primary lg" style="justify-content:center">生成 4 张 · 约 ¥0.80</button>
+        <div style="margin-top:auto"></div>
+        <div class="kv mono"><span>历史</span><span class="v">查看生成记录 →</span></div>
+      </div>
+
+      <div class="cand-area">
+        <div class="stage-h"><h3>候选 · 4 张</h3><span class="hint">点选一张进入编辑台</span></div>
+        <div class="cand-grid"><img src="assets/t2i-grid.png" alt="文生图四宫格候选"></div>
+        <div class="cand-meta">
+          <span class="mono">cand 02 · 1024 × 1024 · 2.4s</span>
+          <span class="sp"></span>
+          <button class="btn">换一批</button>
+          <button class="btn primary">进入编辑 <svg class="ic sm"><use href="#i-redo"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 04 计划卡片规格 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">04</span><h2>Agent 计划卡片 · 组件规格</h2><span class="spec">执行中 / 失败重试 两种状态 · 附标注</span></div>
+  <p class="sec-note">计划可确认、可干预：单步失败不阻断已完成步骤，错误文案说人话（不暴露堆栈），失败步骤不计费。</p>
+
+  <div class="spec-wrap">
+    <!-- A 执行中 -->
+    <div class="anno-col">
+      <div class="sp-card">
+        <div class="hd">步骤 3 / 4 执行中<span class="sp"></span><span class="mono" style="color:var(--ink-3)">plan_7f2a</span></div>
+        <div class="step">
+          <span class="st done"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-check"/></svg></span>
+          <span class="step-main"><span class="step-name">抠图并分离主体</span>
+            <span class="step-meta mono">分割模型 · 2.1s · <span class="c">¥0.03</span></span></span>
+        </div>
+        <div class="step">
+          <span class="st done"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-check"/></svg></span>
+          <span class="step-main"><span class="step-name">换背景 <span class="t">「米白摄影棚」</span></span>
+            <span class="step-meta mono">Seedream 4.5 · 8.4s · <span class="c">¥0.26</span></span></span>
+        </div>
+        <div class="step">
+          <span class="st run"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-play"/></svg></span>
+          <span class="step-main"><span class="step-name">裁剪 1:1</span>
+            <span class="step-meta mono">本地执行 · 即时</span></span>
+        </div>
+        <div class="step">
+          <span class="st wait"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-clock"/></svg></span>
+          <span class="step-main"><span class="step-name">调色 · 提亮 <span class="t">+0.15</span></span>
+            <span class="step-meta mono">等待前序 · 无费用</span></span>
+        </div>
+        <div class="foot mono"><span>本计划 ¥0.29</span><span>今日剩余 18/30</span><span class="sp"></span>
+          <button class="btn ghost" style="height:26px;font-size:11px">取消计划</button></div>
+      </div>
+
+      <!-- 标注 -->
+      <div class="vdim" style="right:96px;top:41px;height:43px"><span>步骤行 43</span></div>
+      <div class="callout" style="right:0;top:196px"><b>状态三点</b><br>完成 #7FA98B · 进行中 #C8503C（呼吸）<br>等待 #6E7074 · 失败 #C79A54</div>
+      <div class="callout" style="right:0;top:280px"><b>数字全部等宽、右对齐</b><br>耗时 / 单价 / 累计 / 配额</div>
+      <div class="callout" style="right:0;top:352px"><b>成本前置声明</b><br>提交前给区间价，执行后落明细</div>
+    </div>
+
+    <!-- B 失败态 -->
+    <div class="anno-col" style="padding-right:200px">
+      <div class="sp-card">
+        <div class="hd">步骤 2 / 3 失败<span class="sp"></span><span class="mono" style="color:var(--amber)">可重试</span></div>
+        <div class="step">
+          <span class="st done"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-check"/></svg></span>
+          <span class="step-main"><span class="step-name">抠图并分离主体</span>
+            <span class="step-meta mono">分割模型 · 2.1s · <span class="c">¥0.03</span></span></span>
+        </div>
+        <div class="step">
+          <span class="st" style="border-color:var(--amber);color:var(--amber)"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-x"/></svg></span>
+          <span class="step-main"><span class="step-name">超分 2×</span>
+            <span class="step-meta mono">失败：上游超时（已重试 1 次）</span></span>
+        </div>
+        <div class="step">
+          <span class="st wait"><svg class="ic sm" style="width:11px;height:11px"><use href="#i-clock"/></svg></span>
+          <span class="step-main"><span class="step-name">调色 · 黑白</span>
+            <span class="step-meta mono">等待前序 · 无费用</span></span>
+        </div>
+        <div class="err-line"><svg class="ic sm"><use href="#i-clock"/></svg><span>本步未计费 · 不影响已完成的步骤 · 已保留当前画布</span></div>
+        <div class="foot mono"><span>已花费 ¥0.03</span><span class="sp"></span>
+          <button class="btn" style="height:26px;font-size:11px"><svg class="ic sm" style="width:13px;height:13px"><use href="#i-retry"/></svg>重试本步</button>
+          <button class="btn ghost" style="height:26px;font-size:11px">跳过并继续</button></div>
+      </div>
+
+      <div class="callout" style="right:0;top:236px"><b>失败不阻断</b><br>已完成的步骤保留，<br>下游步骤保持等待</div>
+      <div class="callout" style="right:0;top:340px"><b>三选一出口</b><br>重试 / 跳过 / 取消</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== 05 移动端 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">05</span><h2>移动端 · 390</h2><span class="spec">工具箱完整 · 编辑器只保留查看 / 调色 / 导出</span></div>
+  <p class="sec-note">360 / 390 / 430 三档同构，仅列宽变化。窄屏一律图标化，不折行、不缩字号；触控目标不小于 44px，输入字号不小于 16px。</p>
+
+  <div class="phones">
+    <!-- 手机 1 · 工具箱 -->
+    <div class="anno-wrap">
+      <div class="phone">
+        <div class="pcol">
+          <div class="pstat mono"><span>14:32</span><span>5G ▮▮▮</span></div>
+          <div class="phead">工具台<span class="chip mono">今日 12/30</span></div>
+          <div class="pgrid">
+            <span class="pcell on"><svg class="ic lg"><use href="#i-eraser"/></svg>消除</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-cut"/></svg>抠图</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-bg"/></svg>换背景</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-adjust"/></svg>调色</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-expand"/></svg>扩图</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-upscale"/></svg>超分</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-heal"/></svg>美化</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-text"/></svg>文字</span>
+            <span class="pcell"><svg class="ic lg"><use href="#i-crop"/></svg>裁剪</span>
+          </div>
+          <div class="psec">最 近</div>
+          <div class="precent">
+            <span class="th"><img src="assets/coffee.png" alt=""></span>
+            <span class="th"><img src="assets/portrait.png" style="filter:grayscale(1)" alt=""></span>
+            <span class="th"><img src="assets/portrait.png" style="filter:brightness(1.12)" alt=""></span>
+          </div>
+          <div class="pbar">
+            <span class="pb"><svg class="ic lg"><use href="#i-undo"/></svg></span>
+            <span class="pb"><svg class="ic lg"><use href="#i-compare"/></svg></span>
+            <span class="pb"><svg class="ic lg"><use href="#i-import"/></svg></span>
+            <span class="pb on"><svg class="ic lg"><use href="#i-export"/></svg></span>
+          </div>
+          <div class="psafe"></div>
+        </div>
+      </div>
+      <!-- 标注 -->
+      <div class="vdim" style="right:-84px;top:753px;height:56px"><span>工具条 56</span></div>
+      <div class="vdim" style="right:-84px;top:809px;height:34px"><span>安全区 34</span></div>
+      <div class="callout" style="left:-8px;top:718px;transform:translateX(-100%)"><b>图标化 · 不折行</b><br>每钮 48 × 48（≥44）<br>全部带 aria-label</div>
+      <div class="leader tr" style="left:-64px;top:781px;width:64px;height:1px;border-width:1px 0 0 0"></div>
+    </div>
+
+    <!-- 手机 2 · 编辑器简版 -->
+    <div class="anno-wrap">
+      <div class="phone">
+        <div class="pcol">
+          <div class="pstat mono"><span>14:33</span><span>5G ▮▮▮</span></div>
+          <div class="pbar2">
+            <svg class="ic lg" style="color:var(--ink-2)"><use href="#i-left"/></svg>
+            <span class="t">街拍人像</span><span class="sp"></span>
+            <svg class="ic lg" style="color:var(--ink-2)"><use href="#i-more"/></svg>
+          </div>
+          <div class="pcanvas">
+            <img src="assets/portrait.png" alt="">
+            <span class="pzoom">适配 78%</span>
+          </div>
+          <div class="psheet">
+            <div class="handle"></div>
+            <div class="lbl">上滑展开 · 图层 / 对话</div>
+          </div>
+          <div class="pbar">
+            <span class="pb"><svg class="ic lg"><use href="#i-undo"/></svg></span>
+            <span class="pb"><svg class="ic lg"><use href="#i-compare"/></svg></span>
+            <span class="pb"><svg class="ic lg"><use href="#i-adjust"/></svg></span>
+            <span class="pb"><svg class="ic lg"><use href="#i-crop"/></svg></span>
+            <span class="pb on"><svg class="ic lg"><use href="#i-export"/></svg></span>
+          </div>
+          <div class="psafe"></div>
+        </div>
+      </div>
+      <!-- 标注 -->
+      <div class="callout" style="right:-104px;top:658px"><b>上滑抽屉</b><br>图层 / 对话<br>默认半开</div>
+      <div class="leader" style="right:-36px;top:720px;width:36px;height:1px;border-width:1px 0 0 0"></div>
+      <div class="vdim" style="right:-84px;top:753px;height:56px"><span>56</span></div>
+    </div>
+  </div>
+  <div class="spec-strip">
+    <span>360 / 390 / 430 同构</span>
+    <span>横屏：工具条转侧轨</span>
+    <span>输入字号 ≥16（防 iOS 缩放）</span>
+    <span>env(safe-area-inset-*)</span>
+  </div>
+</section>
+
+<!-- ==================== 06 设计规范 ==================== -->
+<section class="sec">
+  <div class="sec-head"><span class="num mono">06</span><h2>设计规范 · Tokens</h2><span class="spec">颜色 / 字阶 / 间距 / 圆角 / 动效 / 图标 / 状态</span></div>
+
+  <div class="tok-grid">
+    <!-- 颜色 -->
+    <div class="tok">
+      <h4>COLOR · 银盐五级 + 状态三色</h4>
+      <div class="sw-row">
+        <div class="sw-item"><div class="sw" style="background:#0E0F11"></div><div class="sw-name">银盐黑<em>#0E0F11 · 页面底</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#17181B"></div><div class="sw-name">面板<em>#17181B · 侧栏/顶栏</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#1D1E22"></div><div class="sw-name">面板 2<em>#1D1E22 · 卡片</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#26272B"></div><div class="sw-name">激活<em>#26272B · 选中底</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#2E3034"></div><div class="sw-name">发丝线<em>#2E3034 · 分隔</em></div></div>
+      </div>
+      <div class="sw-row" style="margin-top:14px">
+        <div class="sw-item"><div class="sw" style="background:#E9E9E5"></div><div class="sw-name">相纸白<em>#E9E9E5 · 正文/主按钮</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#A6A7AA"></div><div class="sw-name">次级<em>#A6A7AA</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#6E7074"></div><div class="sw-name">注记<em>#6E7074</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#C8503C"></div><div class="sw-name">安全灯红<em>#C8503C · 进行中</em></div></div>
+        <div class="sw-item"><div class="sw" style="background:#7FA98B"></div><div class="sw-name">定影绿<em>#7FA98B · 完成</em></div></div>
+      </div>
+    </div>
+
+    <!-- 字阶 -->
+    <div class="tok">
+      <h4>TYPE · 黑体正文 + 等宽数字</h4>
+      <div class="tscale">
+        <div class="ts-row"><span class="smp" style="font-size:22px;font-weight:600">未命名项目</span><span class="spec">22 / 600 · 页面标题</span></div>
+        <div class="ts-row"><span class="smp" style="font-size:15px">换背景 · 米白摄影棚</span><span class="spec">15 / 400 · 区块标题</span></div>
+        <div class="ts-row"><span class="smp" style="font-size:13px">把这张图背景换成米白摄影棚</span><span class="spec">13 / 400 · 正文</span></div>
+        <div class="ts-row"><span class="smp" style="font-size:12px;color:var(--ink-2)">等待前序 · 无费用</span><span class="spec">12 / 400 · 次要</span></div>
+        <div class="ts-row"><span class="smp mono" style="font-size:11px;color:var(--ink-3)">¥0.26 · 8.4s · 1080 × 1350</span><span class="spec">11 / mono · 数字与注记</span></div>
+      </div>
+    </div>
+
+    <!-- 间距 / 圆角 -->
+    <div class="tok">
+      <h4>SPACE & RADIUS</h4>
+      <div class="bars">
+        <div class="b" style="width:4px;height:4px"><span>4</span></div>
+        <div class="b" style="width:8px;height:8px"><span>8</span></div>
+        <div class="b" style="width:12px;height:12px"><span>12</span></div>
+        <div class="b" style="width:16px;height:16px"><span>16</span></div>
+        <div class="b" style="width:24px;height:24px"><span>24</span></div>
+        <div class="b" style="width:32px;height:32px"><span>32</span></div>
+        <div class="b" style="width:48px;height:48px"><span>48</span></div>
+      </div>
+      <div class="radii" style="margin-top:34px">
+        <div class="r" style="border-radius:2px"><span>2</span></div>
+        <div class="r" style="border-radius:6px"><span>6</span></div>
+        <div class="r" style="border-radius:10px"><span>10</span></div>
+        <div class="r" style="border-radius:22px;width:44px"><span>胶囊</span></div>
+      </div>
+    </div>
+
+    <!-- 动效 -->
+    <div class="tok">
+      <h4>MOTION · 显影</h4>
+      <div class="dev-strip">
+        <div class="f"><img src="assets/portrait.png" style="filter:grayscale(1) contrast(.8) brightness(.9)" alt=""><span class="c">0ms 低对比</span></div>
+        <span class="arr">→</span>
+        <div class="f"><img src="assets/portrait.png" style="filter:saturate(.55) contrast(.92)" alt=""><span class="c">300ms 上色</span></div>
+        <span class="arr">→</span>
+        <div class="f"><img src="assets/portrait.png" alt=""><span class="c">600ms 定影</span></div>
+      </div>
+      <div class="pstates">
+        <div class="pstate"><span class="n mono">进行中 42%</span><div class="pbar-demo"><i style="width:42%"></i></div></div>
+        <div class="pstate"><span class="n mono">进行中 86%</span><div class="pbar-demo"><i style="width:86%"></i></div></div>
+        <div class="pstate"><span class="n mono">完成</span><div class="pbar-demo"><i style="width:100%;background:var(--green)"></i></div></div>
+      </div>
+      <div class="fld-note" style="margin-top:12px">缓动 cubic-bezier(.22,.61,.36,1) · 生成结果一律 600ms 显影，不用转圈。进度条 = 显影进度，是每天都会看的三件套之一。</div>
+    </div>
+
+    <!-- 图标 -->
+    <div class="tok">
+      <h4>ICON · 1.5px 线性 / 24 网格</h4>
+      <div class="icon-row">
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-cut"/></svg><span>抠图</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-eraser"/></svg><span>消除</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-adjust"/></svg><span>调色</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-bg"/></svg><span>换背景</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-expand"/></svg><span>扩图</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-upscale"/></svg><span>超分</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-text"/></svg><span>文字</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-crop"/></svg><span>裁剪</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-heal"/></svg><span>美化</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-layers"/></svg><span>图层</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-compare"/></svg><span>对比</span></span>
+        <span class="icon-cell"><svg class="ic lg"><use href="#i-export"/></svg><span>导出</span></span>
+      </div>
+    </div>
+
+    <!-- 按钮与状态 -->
+    <div class="tok">
+      <h4>BUTTON & STATE</h4>
+      <div class="btn-row">
+        <button class="btn primary">导出结果</button>
+        <button class="btn">进入编辑</button>
+        <button class="btn ghost">换一批</button>
+        <button class="btn danger"><svg class="ic sm"><use href="#i-x"/></svg>取消计划</button>
+        <button class="btn" disabled>等待前序</button>
+      </div>
+      <div style="display:flex;gap:26px;margin-top:20px">
+        <div class="legend-dots">
+          <span class="r"><span class="dot d-green"></span>完成</span>
+          <span class="r"><span class="dot d-red"></span>进行中</span>
+          <span class="r"><span class="dot d-gray"></span>等待</span>
+          <span class="r"><span class="dot d-amber"></span>失败可重试</span>
+        </div>
+        <div class="note-list" style="flex:1">
+          <span><span class="k">间距</span> · 三件套（对比滑杆 / 进度条 / 计划卡片）独占呼吸空间，周围不加装饰</span>
+          <span><span class="k">数字</span> · 一切度量走等宽，右对齐，位数对齐不抖动</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  retouch-studio 设计图 v1.1 · 方向 A「暗房」——已于 2026-09-21 拍板为正式视觉方向（记录见《项目文档》§6.2）。本稿为静态视觉稿：文案、图片、成本与耗时均为示意数据；
+  下一步按此实现 tokens.css 与四个关键组件（顶栏 / 工具导轨 / 计划卡片 / 对比滑杆），再落入 M5 的界面打磨。
+  未采用的方向 B「标准光源台」与方向 C「选片桌」在《项目文档》§6.2 存档备查。
+</footer>
+
+</div>
+
+<script>
+/* 对比滑杆：拖拽更新 --pos（示意交互） */
+document.querySelectorAll('.cmp').forEach(function(cmp){
+  function set(e){
+    var r = cmp.getBoundingClientRect();
+    var x = Math.min(Math.max(e.clientX - r.left, 0), r.width);
+    cmp.style.setProperty('--pos', (x / r.width * 100) + '%');
+  }
+  var dragging = false;
+  cmp.addEventListener('pointerdown', function(e){ dragging = true; cmp.setPointerCapture(e.pointerId); set(e); });
+  cmp.addEventListener('pointermove', function(e){ if(dragging) set(e); });
+  cmp.addEventListener('pointerup', function(){ dragging = false; });
+});
+</script>
+</body>
+</html>

@@ -109,12 +109,14 @@ export const RUNNERS: Record<string, Runner> = {
   /** 交给编辑模型一步完成，服务端不做像素合成（无 sharp 依赖） */
   replace_background: async (ctx, p) => {
     const { ref, row } = await refOf(ctx, String(p.imageId));
-    const prompt = p.color
-      ? `把背景替换为纯色 ${p.color}，主体边缘干净，光照与投影自然`
-      : p.backgroundImageId
+    const color = str(p.color);
+    const bg = str(p.backgroundImageId);
+    const prompt = color
+      ? `把背景替换为纯色 ${color}，主体边缘干净，光照与投影自然`
+      : bg
         ? '用第二张图作为新背景替换第一张图的背景，保持主体不变、透视与光影一致'
         : `把背景替换为：${str(p.prompt) ?? '干净的摄影棚背景'}。保持主体完全不变，边缘干净，光影自然`;
-    const images = p.backgroundImageId ? [ref, (await refOf(ctx, String(p.backgroundImageId))).ref] : [ref];
+    const images = bg ? [ref, (await refOf(ctx, bg)).ref] : [ref];
     const r = await call(ctx, 'edit', { prompt, images, size: { width: row.width, height: row.height } });
     return { resultImageId: r.row?.id ?? null, costYuan: r.costYuan, provider: r.provider, model: r.model };
   },
@@ -203,7 +205,8 @@ export const RUNNERS: Record<string, Runner> = {
 
   remove_text: async (ctx, p) => {
     const { ref, row } = await refOf(ctx, String(p.imageId));
-    const mask = p.maskImageId ? (await refOf(ctx, String(p.maskImageId))).ref : undefined;
+    const maskId = str(p.maskImageId);
+    const mask = maskId ? (await refOf(ctx, maskId)).ref : undefined;
     const r = await call(ctx, mask ? 'inpaint' : 'edit', {
       prompt: '去除画面上的文字、字幕与角标，用周围内容自然补全，不改动其他部分',
       images: [ref],

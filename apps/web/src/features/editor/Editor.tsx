@@ -183,7 +183,8 @@ export function EditorPage(): ReactElement {
       const meta = e.metaKey || e.ctrlKey;
       if (meta && e.key.toLowerCase() === 'z') {
         e.preventDefault();
-        e.shiftKey ? redo() : undo();
+        if (e.shiftKey) redo();
+        else undo();
       } else if (meta && e.key.toLowerCase() === 's') {
         e.preventDefault();
         void (async () => {

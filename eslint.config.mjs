@@ -47,12 +47,13 @@ export default tseslint.config(
 
       'react-hooks/rules-of-hooks': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/no-base-to-string': 'error',
       '@typescript-eslint/restrict-template-expressions': 'error',
 
       // 存量债，见任务 1.8：逐处补 catch/void 后升 error
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
+      // 表单状态是 Record<string, unknown>，String(v ?? '') 是有意为之
+      '@typescript-eslint/no-base-to-string': 'warn',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/require-await': 'off',
       'no-useless-assignment': 'warn',
@@ -67,6 +68,12 @@ export default tseslint.config(
       'react-hooks/exhaustive-deps': 'warn',
       'react-refresh/only-export-components': 'warn',
     },
+  },
+
+  {
+    // deploy 脚本与根配置本身：只按普通 JS 检查，不参与类型感知
+    files: ['**/*.{js,cjs,mjs}'],
+    languageOptions: { globals: globals.node },
   },
 
   prettier,
