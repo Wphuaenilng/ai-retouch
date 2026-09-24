@@ -1,0 +1,23 @@
+# Windows 上的 Git 默认 autocrlf=true（系统级配置），会把检出文件改成 CRLF。
+# 这个项目要跑进 Linux 容器：*.sh 带 CRLF 会直接 "bad interpreter"，
+# 所以这里显式定死，不再依赖每个人的 git 配置。
+* text=auto eol=lf
+
+# 容器里必须 LF 的执行脚本
+*.sh text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+
+# 二进制：禁止任何换行符改写
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.db binary
+*.sqlite binary
+*.tgz binary
+*.zip binary
