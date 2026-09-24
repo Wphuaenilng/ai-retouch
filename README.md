@@ -22,10 +22,10 @@ pnpm dev                      # 起服务端 8787 + 前端 5173（Vite 代理 /a
 
 | 命令                                  | 覆盖                                                                                                                                                                   |
 | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm verify`                         | 上面全部的串联闸门（typecheck + format:check + lint + test + build），提交前跑这个就是绿的                                                                                            |
+| `pnpm verify`                         | 上面全部的串联闸门（typecheck + format:check + lint + test + build），提交前跑这个就是绿的                                                                             |
 | `pnpm typecheck`                      | 三个包全量类型检查                                                                                                                                                     |
 | `pnpm test`                           | 86 例：迁移与版本表、配额账本、任务超时取消、计划抢占锁、审核故障分档、邀请码期限、计划校验器、规则式规划器、PNG 编解码、画布矩阵、编辑器 store（68 服务端 + 18 前端） |
-| `pnpm --filter @retouch/server smoke` | 端到端 23 项：注册/邀请码一次性/越权/上传/任务/SSE/结果下载/遮罩直传/Agent 多步/配额/错误码                                                                            |
+| `pnpm --filter @retouch/server smoke` | 端到端 25 项：注册/邀请码一次性/越权/上传/任务/SSE/结果下载/遮罩直传/隐私告知/Agent 多步/配额/错误码                                                                   |
 | `pnpm build`                          | 前端产物构建（编辑台按路由懒加载，首屏 399KB / gzip 126KB）                                                                                                            |
 
 冒烟脚本要求服务已在跑，且 `.env` 配了 `BOOTSTRAP_ADMIN_*`（可用 `SMOKE_ADMIN_USER/SMOKE_ADMIN_PASS` 覆盖）。

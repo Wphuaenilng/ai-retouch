@@ -10,7 +10,16 @@ export interface UserRow {
   role: 'user' | 'admin';
   quota_per_day: number;
   token_version: number;
+  /** 隐私告知的确认时间；NULL = 还没确认过，首次上传前要拦一道 */
+  consent_at: string | null;
   created_at: string;
+}
+
+/** 记一次确认即可，不做版本化文案：真要改口径得重新征询，那时再加文案哈希 */
+export function setConsent(id: string): string {
+  const at = nowIso();
+  run('UPDATE users SET consent_at = ? WHERE id = ? AND consent_at IS NULL', at, id);
+  return get<{ consent_at: string | null }>('SELECT consent_at FROM users WHERE id = ?', id)?.consent_at ?? at;
 }
 
 /** 会话吊销：版本号一变，之前签出的 token 全部作废 */

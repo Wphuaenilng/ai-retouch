@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { getTool, toolsByGroup, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { prepareUpload } from '../../lib/image';
+import { PRIVACY_LINES } from '../../lib/privacy';
 import { useEvent } from '../../lib/sse-bus';
 import { Icon } from '../../ui/Icon';
 import { Splitter, useColWidth } from '../../ui/Splitter';
+import { ConsentModal } from '../privacy/ConsentModal';
 import { ToolForm } from '../tools/ToolForm';
 
 /** 账号：改密码。改完服务端会吊销所有会话，所以这里必须重新登录。 */
@@ -320,7 +322,11 @@ export function StudioPage(): ReactElement {
   const current = useMemo(() => images.find((i) => i.id === currentId) ?? null, [images, currentId]);
   const result = task?.resultImageId ? (images.find((i) => i.id === task.resultImageId) ?? null) : null;
 
-  const onPickFile = async (file: File): Promise<void> => {
+  // 图片第一次离开浏览器之前先问一句（01 §7.1 的产品底线）。确认记在账号上，
+  // 所以换浏览器会再问一次 —— 这是故意的，localStorage 里的"同意"跟着设备走，不算数
+  const [pending, setPending] = useState<File | null>(null);
+
+  const doUpload = async (file: File): Promise<void> => {
     setUploading(true);
     try {
       const prepared = await prepareUpload(file);
@@ -338,6 +344,14 @@ export function StudioPage(): ReactElement {
     } finally {
       setUploading(false);
     }
+  };
+
+  const onPickFile = async (file: File): Promise<void> => {
+    if (!me?.consentAt) {
+      setPending(file);
+      return;
+    }
+    await doUpload(file);
   };
 
   const run = async ({ tool: t, params }: { tool: ToolDef; params: Record<string, unknown> }): Promise<void> => {
@@ -554,11 +568,30 @@ export function StudioPage(): ReactElement {
             <span>配额</span>
             <span className="v">{me ? `今日剩余 ${me.quota.remaining} 次` : '…'}</span>
           </div>
-          <div className="hint" style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.8 }}>
-            图片会传输给云端模型处理；本项目为邀请制，仅自己与受邀者可见。
-          </div>
+          <details className="notice">
+            <summary>上传前须知：图片会交给云端模型处理</summary>
+            <ol>
+              {PRIVACY_LINES.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ol>
+            <div>{me?.consentAt ? `已于 ${me.consentAt.slice(0, 10)} 确认` : '还没确认过 —— 首次上传时会问你一次'}</div>
+          </details>
         </div>
       </div>
+
+      {pending && (
+        <ConsentModal
+          onCancel={() => setPending(null)}
+          onDone={() => {
+            const f = pending;
+            setPending(null);
+            // 本地也记一下，免得同一页里传第二张又问一遍
+            setMe((m) => (m ? { ...m, consentAt: new Date().toISOString() } : m));
+            void doUpload(f);
+          }}
+        />
+      )}
 
       {toast && <div className={`toast ${toast.ok ? 'ok' : ''}`}>{toast.text}</div>}
     </div>

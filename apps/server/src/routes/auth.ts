@@ -4,6 +4,7 @@ import { config } from '../config';
 import { clearSessionCookie, serializeSessionCookie, SESSION_COOKIE } from '../lib/cookies';
 import { err } from '../lib/errors';
 import { changePassword, login, logout, meFromClaims, register } from '../services/auth';
+import { setConsent } from '../store/users';
 import { limit, requireUser } from './_http';
 
 const MAX_AGE = 30 * 24 * 3600;
@@ -59,6 +60,12 @@ export function authRoutes(app: FastifyInstance): void {
     const me = meFromClaims(s);
     if (!me) throw err('UNAUTHORIZED', '账号已不存在');
     return { ok: true, data: { me } };
+  });
+
+  // 隐私告知：确认过一次就记在账号上（换浏览器也要重新确认，所以不能只存前端）
+  app.post('/api/consent', async (req) => {
+    const s = requireUser(req);
+    return { ok: true, data: { consentAt: setConsent(s.sub) } };
   });
 
   app.get('/api/config', async () => ({

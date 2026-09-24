@@ -190,6 +190,8 @@ export interface MeDTO {
   role: 'user' | 'admin';
   quota: QuotaDTO;
   createdAt: string;
+  /** 隐私告知确认时间；null 表示还没确认过，前端在首次上传前拦一道 */
+  consentAt: string | null;
 }
 
 /* ------------------------------------------------------------------ *

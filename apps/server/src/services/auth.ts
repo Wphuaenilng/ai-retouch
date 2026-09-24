@@ -13,6 +13,7 @@ export function toMe(user: UserRow): MeDTO {
     username: user.username,
     role: user.role,
     quota: getQuota(user.id),
+    consentAt: user.consent_at,
     createdAt: user.created_at,
   };
 }

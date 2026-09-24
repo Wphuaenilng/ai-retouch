@@ -167,12 +167,22 @@ async function main(): Promise<void> {
 
   const username = `smoke_${Date.now().toString(36)}`;
   const reg = data(
-    await api<{ data: { me: { id: string; quota: { limit: number } } } }>('/api/auth/register', {
+    await api<{ data: { me: { id: string; consentAt: string | null; quota: { limit: number } } } }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify({ inviteCode: invite.codes[0], username, password: 'smoke-password-123' }),
     }),
   );
   check('邀请码注册并种下会话', Boolean(reg.me.id), `配额 ${reg.me.quota.limit}/天`);
+
+  // 隐私告知：新账号必须是"还没问过"，前端据此在首次上传前拦一道
+  check('新账号未确认隐私告知', reg.me.consentAt === null, String(reg.me.consentAt));
+  const consented = data(await api<{ data: { consentAt: string } }>('/api/consent', { method: 'POST' }));
+  const meAfter = data(await api<{ data: { me: { consentAt: string | null } } }>('/api/me'));
+  check(
+    '隐私确认可记到账号上',
+    Boolean(consented.consentAt) && meAfter.me.consentAt === consented.consentAt,
+    consented.consentAt,
+  );
 
   const reuse = await api('/api/auth/register', {
     method: 'POST',

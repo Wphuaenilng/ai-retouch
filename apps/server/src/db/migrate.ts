@@ -27,6 +27,10 @@ export const MIGRATIONS: Migration[] = [
     name: 'users.token_version（会话可吊销）',
     sql: 'ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0',
   },
+  {
+    name: 'users.consent_at（隐私告知已确认时间）',
+    sql: 'ALTER TABLE users ADD COLUMN consent_at TEXT',
+  },
 ];
 
 const BASELINE_VERSION = 1;

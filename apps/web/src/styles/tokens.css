@@ -1285,6 +1285,84 @@ input[type='color'] {
   resize: none;
 }
 
+/* 侧栏里的常驻版告知：默认收成一行，展开才给全文 */
+.notice {
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.75;
+}
+.notice summary {
+  cursor: pointer;
+  list-style: none;
+}
+.notice summary::-webkit-details-marker {
+  display: none;
+}
+.notice summary::before {
+  content: '› ';
+  font-family: var(--mono);
+}
+.notice[open] summary::before {
+  content: '⌄ ';
+}
+.notice ol {
+  margin: 8px 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+}
+
+/* 隐私告知弹窗：唯一的阻塞层，所以底色压得比面板更暗 */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 7, 8, 0.78);
+  display: grid;
+  place-items: center;
+  z-index: 90;
+  padding: var(--sp-4);
+}
+.modal {
+  width: min(520px, 100%);
+  max-height: min(80vh, 620px);
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+  padding: 20px 22px;
+}
+.modal h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+.modal .sub {
+  color: var(--ink-3);
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+.modal ol {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.modal ol li::marker {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.modal .acts {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 /* 移动端与窄屏：工具条图标化，不折行 */
 @media (max-width: 1023px) {
   :root {
