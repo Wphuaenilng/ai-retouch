@@ -182,6 +182,8 @@ export interface QuotaDTO {
   used: number;
   remaining: number;
   costTodayYuan: number;
+  /** 下一次日切的绝对时刻（服务器本地 0 点）。别说"明天 0 点"，那只对同时区的人成立 */
+  resetsAt: string;
 }
 
 export interface MeDTO {

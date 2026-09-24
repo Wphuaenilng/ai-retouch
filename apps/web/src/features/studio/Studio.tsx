@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getTool, toolsByGroup, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { prepareUpload } from '../../lib/image';
+import { untilText } from '../../lib/time';
 import { PRIVACY_LINES } from '../../lib/privacy';
 import { useEvent } from '../../lib/sse-bus';
 import { Icon } from '../../ui/Icon';
@@ -589,7 +590,7 @@ export function StudioPage(): ReactElement {
           </div>
           <div className="kv mono">
             <span>配额</span>
-            <span className="v">{me ? `今日剩余 ${me.quota.remaining} 次` : '…'}</span>
+            <span className="v">{me ? `今日剩余 ${me.quota.remaining} 次 · ${untilText(me.quota.resetsAt)}重置` : '…'}</span>
           </div>
           <details className="notice">
             <summary>上传前须知：图片会交给云端模型处理</summary>

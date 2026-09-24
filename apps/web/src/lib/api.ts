@@ -56,7 +56,9 @@ export const api = {
 /** 错误码 → 人话。前端只认 code，不解析 message 文本 */
 export const ERROR_HINTS: Record<string, string> = {
   UNAUTHORIZED: '登录状态已过期，请重新登录',
-  QUOTA_EXCEEDED: '今日次数已用完，明天 0 点重置',
+  // 不写"明天 0 点"：日切按服务器本地时区，容器 UTC 时国内是早上 8 点。
+  // 具体还有多久由界面用 me.quota.resetsAt 算给你看。
+  QUOTA_EXCEEDED: '今日次数已用完，等日切或找管理员调配额',
   MODERATION_REJECTED: '内容未通过安全审核',
   MODERATION_UNAVAILABLE: '审核服务暂时不可用，稍后重试（为避免漏审，成品图不放行）',
   PROVIDER_TIMEOUT: '模型响应超时，点重试即可',
