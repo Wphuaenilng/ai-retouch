@@ -1,0 +1,72 @@
+import type { FastifyInstance } from 'fastify';
+import { config } from '../config';
+import { providerStatus } from '../providers/registry';
+import { getQuota } from '../services/quota';
+import { globalCostToday } from '../store/usage';
+import { createInvites, listInvites, listUsers, updateUserQuota } from '../store/users';
+import { db } from '../db/index';
+import { worker } from '../queue/index';
+import { p, requireAdmin } from './_http';
+
+export function adminRoutes(app: FastifyInstance): void {
+  app.get('/api/admin/overview', async (req) => {
+    requireAdmin(req);
+    const totals = db
+      .prepare(
+        `SELECT
+          (SELECT COUNT(*) FROM users) AS users,
+          (SELECT COUNT(*) FROM tasks) AS tasks,
+          (SELECT COUNT(*) FROM tasks WHERE status = 'failed') AS failedTasks,
+          (SELECT COUNT(*) FROM images) AS images,
+          (SELECT COUNT(*) FROM invites WHERE used_by IS NULL) AS freeInvites`,
+      )
+      .get() as Record<string, number | bigint>;
+    return {
+      ok: true,
+      data: {
+        totals: Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, Number(v)])),
+        costTodayYuan: Math.round(globalCostToday() * 100) / 100,
+        budgetYuan: config.DAILY_BUDGET_YUAN,
+        worker: worker.stats,
+        providers: providerStatus(),
+        moderation: config.MODERATION,
+      },
+    };
+  });
+
+  app.get('/api/admin/users', async (req) => {
+    requireAdmin(req);
+    const users = listUsers().map((u) => ({
+      id: u.id,
+      username: u.username,
+      role: u.role,
+      quotaPerDay: u.quota_per_day,
+      quota: getQuota(u.id),
+      createdAt: u.created_at,
+    }));
+    return { ok: true, data: { users } };
+  });
+
+  app.patch('/api/admin/users/:id', async (req) => {
+    requireAdmin(req);
+    const body = (req.body ?? {}) as { quotaPerDay?: number };
+    const q = Number(body.quotaPerDay);
+    if (!Number.isInteger(q) || q < 0 || q > 5000) {
+      return { ok: false as const, error: { code: 'BAD_REQUEST' as const, message: 'quotaPerDay 需要是 0-5000 的整数' } };
+    }
+    updateUserQuota(p(req).id, q);
+    return { ok: true, data: { updated: true } };
+  });
+
+  app.get('/api/admin/invites', async (req) => {
+    requireAdmin(req);
+    return { ok: true, data: { invites: listInvites() } };
+  });
+
+  app.post('/api/admin/invites', async (req) => {
+    const s = requireAdmin(req);
+    const body = (req.body ?? {}) as { count?: number };
+    const n = Math.min(Math.max(Number(body.count ?? 1) || 1, 1), 20);
+    return { ok: true, data: { codes: createInvites(s.sub, n) } };
+  });
+}

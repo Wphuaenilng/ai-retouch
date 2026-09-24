@@ -1,0 +1,15 @@
+node_modules/
+dist/
+data/
+.env
+.env.local
+*.log
+.DS_Store
+.vite/
+coverage/
+apps/web/dist/
+*.tsbuildinfo
+
+# 内部文档与设计稿，不入公共仓库
+docs/
+design/

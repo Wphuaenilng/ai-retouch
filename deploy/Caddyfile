@@ -1,0 +1,15 @@
+# 自动签发/续期证书；把 SITE_ADDRESS 换成你的域名即可
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	# flush_interval -1 关键：否则 SSE 进度被缓冲，前端看起来"卡住不动"
+	reverse_proxy app:8787 {
+		flush_interval -1
+	}
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		-Server
+	}
+}

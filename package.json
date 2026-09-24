@@ -1,0 +1,29 @@
+{
+  "name": "retouch-studio",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @retouch/server --filter @retouch/web dev",
+    "dev:server": "pnpm --filter @retouch/server dev",
+    "dev:web": "pnpm --filter @retouch/web dev",
+    "db:migrate": "pnpm --filter @retouch/server db:migrate",
+    "db:seed": "pnpm --filter @retouch/server db:seed",
+    "typecheck": "pnpm -r --parallel typecheck",
+    "test": "pnpm --filter @retouch/server test",
+    "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9",
+    "typescript-eslint": "^8.70.1"
+  }
+}
