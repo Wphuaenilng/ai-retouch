@@ -108,7 +108,9 @@ export interface ToolDef<T extends z.ZodTypeAny = z.ZodTypeAny> {
   needsMask?: boolean;
   /** 结果落地形态：新图 / 图层变更 / 无（导出） */
   produces: 'image' | 'layers' | 'none';
-  /** 参考单价（元），仅用于提交前的区间提示 */
+  /** 参考单价（元），仅用于提交前的区间提示。
+   *  一个工具内部调用几次上游就要累加几次（split_layers = segment + edit）；
+   *  真实记账以 provider 返回的 costYuan 为准，别拿这个数当账本。 */
   costYuan: number;
   input: T;
   /** 工具箱表单字段 */

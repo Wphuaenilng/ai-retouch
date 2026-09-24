@@ -476,7 +476,8 @@ const splitLayers: ToolDef = {
   priority: 1,
   needsImage: true,
   produces: 'layers',
-  costYuan: 0.06,
+  // 两次上游调用：segment（抠主体）+ edit（补背景），别写成单次价
+  costYuan: 0.29,
   fields: [F.imageId, { key: 'ocr', label: '尝试拆出文字层', kind: 'toggle' }],
   agentHint: '把一张图拆成主体层 + 背景层（可选文字层），拆完各层可独立移动调色。',
   paramsHint: '{imageId, ocr?:boolean}',

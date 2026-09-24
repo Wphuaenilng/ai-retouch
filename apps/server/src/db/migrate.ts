@@ -18,7 +18,12 @@ export interface Migration {
  * 每条迁移与它的 user_version 写在同一个事务里：中途崩溃不会留下"改了一半"的库。
  */
 export const MIGRATIONS: Migration[] = [
-  // { name: 'users.token_version', sql: 'ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0' },
+  {
+    name: 'plans.exec_token（计划执行锁）',
+    sql: `ALTER TABLE plans ADD COLUMN exec_token TEXT;
+          ALTER TABLE plans ADD COLUMN exec_started_at TEXT;`,
+  },
+  // 下一条的样子：ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0
 ];
 
 const BASELINE_VERSION = 1;

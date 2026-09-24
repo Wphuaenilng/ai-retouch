@@ -23,6 +23,9 @@ const PRICES: Partial<Record<Capability, number>> = {
   segment: 0.03,
 };
 
+/** 单价的唯一出口：报价与记账都走这里 */
+const priceFor = (c: Capability): number => PRICES[c] ?? 0.26;
+
 interface DashSubmit {
   output?: { task_id?: string; task_status?: string };
   code?: string;
@@ -48,7 +51,7 @@ export const wanxProvider: ImageProvider = {
   get available() {
     return Boolean(config.DASHSCOPE_API_KEY);
   },
-  priceFor: (c) => PRICES[c] ?? 0.26,
+  priceFor,
 
   async generate(req: ProviderRequest, onProgress, opts): Promise<ProviderResult> {
     const base = config.DASHSCOPE_BASE_URL.replace(/\/$/, '');
@@ -110,7 +113,7 @@ export const wanxProvider: ImageProvider = {
 
     return {
       images,
-      costYuan: images.length * (PRICES[req.capability] ?? 0.26),
+      costYuan: images.length * priceFor(req.capability),
       provider: 'wanx',
       model: isT2i ? config.WANX_T2I_MODEL : config.WANX_EDIT_MODEL,
       raw: done.usage,

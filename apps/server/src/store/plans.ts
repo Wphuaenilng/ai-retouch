@@ -22,8 +22,28 @@ export interface PlanRow {
   summary: string | null;
   steps: string;
   cost_yuan: number;
+  exec_token: string | null;
+  exec_started_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * 抢占执行权：只有把 exec_token 从"没人持有"翻成自己的人才算拿到锁。
+ * 以前 approve / retry / skip 都能各自起一个 executePlan，两个执行器对同一份
+ * steps JSON 读-改-写，互相覆盖状态、还会把同一步跑两遍重复扣钱。
+ */
+export function claimPlan(id: string, token: string): boolean {
+  return run('UPDATE plans SET exec_token = ?, exec_started_at = ? WHERE id = ? AND exec_token IS NULL', token, nowIso(), id).changes === 1;
+}
+
+export function releasePlan(id: string, token: string): void {
+  run('UPDATE plans SET exec_token = NULL, exec_started_at = NULL WHERE id = ? AND exec_token = ?', id, token);
+}
+
+/** 进程重启：上次死掉时留下的锁全部放开（否则那个计划永远没法再执行） */
+export function resetPlanLocks(): number {
+  return run('UPDATE plans SET exec_token = NULL, exec_started_at = NULL WHERE exec_token IS NOT NULL').changes;
 }
 
 export function insertPlan(input: {
@@ -63,6 +83,7 @@ export function listPlans(userId: string, limit = 30): PlanRow[] {
 export function savePlan(
   id: string,
   patch: { status?: PlanStatus; steps?: StepRecord[]; costYuan?: number },
+  token?: string,
 ): PlanRow | undefined {
   const sets: string[] = [];
   const args: unknown[] = [];
@@ -81,7 +102,13 @@ export function savePlan(
   if (!sets.length) return findPlan(id);
   sets.push('updated_at = ?');
   args.push(nowIso(), id);
-  run(`UPDATE plans SET ${sets.join(', ')} WHERE id = ?`, ...args);
+  let where = 'WHERE id = ?';
+  if (token) {
+    // 带着令牌写：锁已经不归自己就一个字都不改，避免把别人的执行结果盖掉
+    where += ' AND exec_token = ?';
+    args.push(token);
+  }
+  if (run(`UPDATE plans SET ${sets.join(', ')} ${where}`, ...args).changes === 0) return undefined;
   return findPlan(id);
 }
 

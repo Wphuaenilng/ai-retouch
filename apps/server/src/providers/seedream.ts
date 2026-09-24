@@ -18,6 +18,9 @@ const PRICES: Partial<Record<Capability, number>> = {
   upscale: 0.12,
 };
 
+/** 单价的唯一出口：报价与记账都走这里，避免两处数字各改各的 */
+const priceFor = (c: Capability): number => PRICES[c] ?? 0.26;
+
 interface ArkResponse {
   data?: { url?: string; b64_json?: string; size?: string; watermark?: boolean }[];
   usage?: { generated_images?: number; total_tokens?: number };
@@ -31,7 +34,7 @@ export const seedreamProvider: ImageProvider = {
   get available() {
     return Boolean(config.ARK_API_KEY);
   },
-  priceFor: (c) => PRICES[c] ?? 0.26,
+  priceFor,
 
   async generate(req: ProviderRequest, onProgress, opts): Promise<ProviderResult> {
     const w = Math.min(req.size?.width ?? 1024, 4096);
@@ -72,7 +75,7 @@ export const seedreamProvider: ImageProvider = {
 
     return {
       images,
-      costYuan: images.length * (PRICES[req.capability] ?? 0.26),
+      costYuan: images.length * priceFor(req.capability),
       provider: 'seedream',
       model: config.ARK_IMAGE_MODEL,
       raw: json.usage,

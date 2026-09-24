@@ -4,7 +4,7 @@ import { hub } from '../lib/sse';
 import { plan } from '../agent/planner';
 import { validatePlan } from '../agent/validator';
 import { executePlan, reportClientReceipt, toPlanDTO } from '../agent/executor';
-import { insertPlan, listPlans, planSteps, savePlan, type StepRecord, findPlan } from '../store/plans';
+import { insertPlan, listPlans, planSteps, savePlan, type PlanRow, type StepRecord, findPlan } from '../store/plans';
 import { docFacts, requireDoc } from './documents';
 
 export { reportClientReceipt };
@@ -46,11 +46,18 @@ function requirePlan(id: string, userId: string) {
   return row;
 }
 
+/** 正在跑（或执行锁还在人手上）的计划不允许 retry/skip，否则就是两个执行器同时写 steps */
+function guardIdle(row: PlanRow): void {
+  if (row.status === 'running' || row.exec_token) {
+    throw err('PLAN_NOT_APPROVABLE', '这个计划还在执行中，等当前步骤结束再操作');
+  }
+}
+
 export function approvePlan(id: string, userId: string): PlanDTO {
   const row = requirePlan(id, userId);
   if (row.status !== 'proposed') throw err('PLAN_NOT_APPROVABLE', '这个计划已经不在待确认状态了');
   savePlan(id, { status: 'approved' });
-  // 不 await：HTTP 先返回，进度靠 SSE
+  // 不 await：HTTP 先返回，进度靠 SSE；真正的互斥在 executePlan 里抢锁
   void executePlan(id).catch((e) => console.error('[agent] 计划执行异常', e));
   return toPlanDTO(findPlan(id)!);
 }
@@ -58,6 +65,7 @@ export function approvePlan(id: string, userId: string): PlanDTO {
 /** 单步重试：从该步开始重跑，已成功的步骤不动 */
 export function retryStep(planId: string, idx: number, userId: string): PlanDTO {
   const row = requirePlan(planId, userId);
+  guardIdle(row);
   const steps = planSteps(row);
   const step = steps.find((s) => s.idx === idx);
   if (!step) throw err('NOT_FOUND', `计划里没有第 ${idx + 1} 步`);
@@ -78,6 +86,7 @@ export function retryStep(planId: string, idx: number, userId: string): PlanDTO 
 /** 跳过该步并继续下游 */
 export function skipStep(planId: string, idx: number, userId: string): PlanDTO {
   const row = requirePlan(planId, userId);
+  guardIdle(row);
   const steps = planSteps(row);
   const step = steps.find((s) => s.idx === idx);
   if (!step) throw err('NOT_FOUND', `计划里没有第 ${idx + 1} 步`);

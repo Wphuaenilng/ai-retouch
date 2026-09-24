@@ -1,5 +1,6 @@
 import { config } from '../config';
 import { claimNextTask, reapStaleRunning, type TaskRow } from '../store/tasks';
+import { resetPlanLocks } from '../store/plans';
 import { refund } from '../services/quota';
 import { executeTask } from '../services/tasks';
 import { onWakeup } from './signal';
@@ -17,6 +18,9 @@ class Worker {
   private offWakeup: (() => void) | null = null;
 
   start(): void {
+    // 进程死了执行器也就没了，上次留下的计划锁必须放开，否则那些计划永远 approve 不动
+    const unlocked = resetPlanLocks();
+    if (unlocked) console.log(`[queue] 释放上次残留的计划执行锁 ${unlocked} 把`);
     const stale = reapStaleRunning();
     if (stale.count) {
       // 上次进程被杀时这些任务已经预扣过配额，回收时必须退回去
