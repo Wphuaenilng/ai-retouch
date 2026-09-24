@@ -1,4 +1,4 @@
-import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { config } from '../config';
 import { EXT_FOR_MIME } from './imagedims';
@@ -29,6 +29,11 @@ export async function imageExists(path: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** 删文件。行已经要删了，文件不在就等于删成功，所以 ENOENT 直接吞 */
+export async function removeImage(path: string): Promise<void> {
+  await rm(path, { force: true });
 }
 
 export function mimeOfPath(path: string): string {

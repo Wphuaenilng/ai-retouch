@@ -49,7 +49,9 @@ export function uploadRoutes(app: FastifyInstance): void {
     for (const [field, kind] of ORDER) {
       const f = files[field];
       if (!f || out[kind]) continue;
-      const row = await saveImage({ userId: s.sub, kind, buf: f.buf });
+      // ORDER 把 original 排在前面，所以 edit/thumb 拿得到父行；删原图时它们要一起走
+      const parentId = kind === 'edit' || kind === 'thumb' ? out.original?.id : undefined;
+      const row = await saveImage({ userId: s.sub, kind, buf: f.buf, parentImageId: parentId });
       await assertImageSafe(row, 'upload');
       out[kind] = toDTO(row);
     }

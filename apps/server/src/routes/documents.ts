@@ -35,7 +35,7 @@ export function documentRoutes(app: FastifyInstance): void {
 
   app.delete('/api/documents/:id', async (req) => {
     const s = requireUser(req);
-    removeDoc(p(req).id, s.sub);
-    return { ok: true, data: { deleted: true } };
+    const r = await removeDoc(p(req).id, s.sub);
+    return { ok: true, data: { deleted: true, images: r.images } };
   });
 }

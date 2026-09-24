@@ -27,6 +27,7 @@ const ROW: ImageRow = {
   kind: 'result',
   path: file,
   parent_task_id: null,
+  parent_image_id: null,
   width: 1,
   height: 1,
   bytes: 4,

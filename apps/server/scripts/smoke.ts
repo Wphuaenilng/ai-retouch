@@ -193,8 +193,11 @@ async function main(): Promise<void> {
   );
   check('邀请码一次性', typeof reuse === 'string' && /邀请码/.test(reuse as string), typeof reuse === 'string' ? reuse : '');
 
+  // 与真实客户端一致：一次上传送 original + edit + thumb 三份，删除时才看得出级联
   const fd = new FormData();
   fd.append('file', new Blob([new Uint8Array(IMAGE_BUF)], { type: 'image/png' }), 'portrait.png');
+  fd.append('edit', new Blob([new Uint8Array(IMAGE_BUF)], { type: 'image/png' }), 'portrait.edit.png');
+  fd.append('thumb', new Blob([new Uint8Array(IMAGE_BUF)], { type: 'image/png' }), 'portrait.thumb.png');
   const up = data(
     await api<{ data: { original: { id: string; width: number; height: number } } }>('/api/uploads', {
       method: 'POST',
@@ -275,8 +278,13 @@ async function main(): Promise<void> {
   const bCookie = (regB.headers.get('set-cookie') ?? '').split(';')[0];
   const cross = await fetch(`${BASE}/api/images/${up.original.id}`, { headers: { cookie: bCookie } });
   check('跨用户取他人图片被拒（403）', cross.status === 403, `HTTP ${cross.status}`);
+  const crossDel = await fetch(`${BASE}/api/images/${up.original.id}`, { method: 'DELETE', headers: { cookie: bCookie } });
+  const crossDelBody = (await crossDel.json().catch(() => null)) as { ok?: boolean } | null;
+  check('他人删我的图被拒', crossDel.status === 403 && crossDelBody?.ok !== true, `HTTP ${crossDel.status}`);
   const noAuth = await fetch(`${BASE}/api/images/${up.original.id}`);
   check('未登录取图片被拒（401）', noAuth.status === 401, `HTTP ${noAuth.status}`);
+  const stillThere = await fetch(`${BASE}/api/images/${up.original.id}`, { headers: { cookie: userCookie } });
+  check('被拒之后图还在', stillThere.ok, `HTTP ${stillThere.status}`);
   cookie = userCookie;
 
   const plan = data(
@@ -329,6 +337,24 @@ async function main(): Promise<void> {
     (e: Error) => e.message,
   );
   check('普通用户访问管理端被拒', forbidden !== null && /403|管理员/.test(forbidden ?? ''), forbidden ?? '');
+
+  // —— 删除放在最后：前面的用例都要用这张原图
+  const del = data(
+    await api<{ data: { deleted: number; files: number } }>(`/api/images/${up.original.id}`, { method: 'DELETE' }),
+  );
+  check(
+    '删图带走原图与同次上传的派生件',
+    del.deleted >= 3 && del.files === del.deleted,
+    `${del.deleted} 行 / ${del.files} 个文件`,
+  );
+  const afterDel = await fetch(`${BASE}/api/images/${up.original.id}`, { headers: { cookie } });
+  check('删完再取就是 404', afterDel.status === 404, `HTTP ${afterDel.status}`);
+  const docAfter = await api<{ data: { document: { canvas: { layers: unknown[] } } } }>(`/api/documents/${doc.document.id}`);
+  check(
+    '画布上的引用被剥干净',
+    (docAfter.data?.document?.canvas?.layers?.length ?? -1) === 0,
+    `剩 ${docAfter.data?.document?.canvas?.layers?.length} 层`,
+  );
 
   const relogin = await api<{ data: { me: { role: string } } }>('/api/auth/login', {
     method: 'POST',

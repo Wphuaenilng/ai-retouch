@@ -7,6 +7,8 @@ export interface ImageRow {
   kind: 'original' | 'edit' | 'result' | 'thumb' | 'mask';
   path: string;
   parent_task_id: string | null;
+  /** 同一次上传里由谁派生（edit/thumb 认 original）；迁移 #5 之前的行是 NULL */
+  parent_image_id: string | null;
   width: number;
   height: number;
   bytes: number;
@@ -24,16 +26,19 @@ export function insertImage(input: {
   height: number;
   bytes: number;
   parentTaskId?: string | null;
+  /** 同一次上传里由谁派生：edit/thumb 认 original。老数据是 NULL，删除时只删自己 */
+  parentImageId?: string | null;
 }): ImageRow {
   const id = input.id ?? newImageId();
   run(
-    `INSERT INTO images (id, user_id, kind, path, parent_task_id, width, height, bytes, mime, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO images (id, user_id, kind, path, parent_task_id, parent_image_id, width, height, bytes, mime, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     id,
     input.userId,
     input.kind,
     input.path,
     input.parentTaskId ?? null,
+    input.parentImageId ?? null,
     input.width,
     input.height,
     input.bytes,
@@ -69,4 +74,9 @@ export function listImages(userId: string, opts: { kinds?: string[]; limit?: num
 
 export function deleteImage(id: string, userId: string): void {
   run('DELETE FROM images WHERE id = ? AND user_id = ?', id, userId);
+}
+
+/** 一次上传的派生件：删原图时不该把它的编辑副本与缩略图留在盘上 */
+export function findDerived(userId: string, parentId: string): ImageRow[] {
+  return all<ImageRow>('SELECT * FROM images WHERE user_id = ? AND parent_image_id = ?', userId, parentId);
 }

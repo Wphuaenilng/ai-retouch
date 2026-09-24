@@ -9,7 +9,8 @@ import {
   updateDocument,
   type DocumentRow,
 } from '../store/documents';
-import { requireOwned } from './images';
+import { purgeImages, requireOwned } from './images';
+import { findImage, listImages } from '../store/images';
 
 export function toDTO(row: DocumentRow): DocumentDTO {
   return {
@@ -66,9 +67,21 @@ function checkedThumb(value: unknown, userId: string): string | null | undefined
   return value;
 }
 
-export function removeDoc(id: string, userId: string): void {
-  requireDoc(id, userId);
+/**
+ * 删项目：把只属于这个项目的图一起清掉（任务产物 + 封面缩略图），
+ * 但**保留来源原图** —— 同一张原图可能被别的项目在用，而且原图要删就该由用户明确删那张图。
+ * 不这么分的话，删一个项目会静悄悄把别的项目的底图也带走。
+ */
+export async function removeDoc(id: string, userId: string): Promise<{ images: number }> {
+  const row = requireDoc(id, userId);
+  const mine = listImages(userId, { documentId: id, limit: 200 }).filter(
+    (img) => img.id !== row.source_image_id && img.id !== row.thumb_image_id,
+  );
+  const thumb = row.thumb_image_id ? findImage(row.thumb_image_id) : undefined;
+  const gone = [...new Map([...mine, ...(thumb ? [thumb] : [])].map((r) => [r.id, r])).values()];
+  const { images } = await purgeImages(gone, userId);
   deleteDocument(id, userId);
+  return { images };
 }
 
 /** 从文档里取"当前图片"与"当前选区"，供 Agent 补全参数 */

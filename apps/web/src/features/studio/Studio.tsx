@@ -273,6 +273,7 @@ export function StudioPage(): ReactElement {
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [task, setTask] = useState<TaskDTO | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tlW, setTlW, resetTlW] = useColWidth('studio.toolListW', 240, 180, 420);
@@ -352,6 +353,22 @@ export function StudioPage(): ReactElement {
       return;
     }
     await doUpload(file);
+  };
+
+  // 删掉 = 文件也从盘上走。确认一句，因为这是不可撤销的
+  const removeImage = async (id: string): Promise<void> => {
+    if (!window.confirm('删除这张图？服务器上的文件会一起删掉，画布用到它的图层会被剥掉。')) return;
+    setDeleting(true);
+    try {
+      const r = await api.del<{ deleted: number; files: number }>(`/api/images/${id}`);
+      flash(`已删除 ${r.deleted} 个文件`, true);
+      if (currentId === id) setCurrentId(null);
+      await refresh();
+    } catch (e) {
+      flash(errorText(e));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const run = async ({ tool: t, params }: { tool: ToolDef; params: Record<string, unknown> }): Promise<void> => {
@@ -503,6 +520,12 @@ export function StudioPage(): ReactElement {
                     <Icon name="i-import" className="ic sm" />
                     换一张
                   </button>
+                  {current && (
+                    <button className="btn ghost" disabled={deleting} onClick={() => void removeImage(current.id)}>
+                      <Icon name="i-trash" className="ic sm" />
+                      {deleting ? '删除中…' : '删掉这张'}
+                    </button>
+                  )}
                   <span className="sp" />
                   {images.slice(0, 6).map((im) => (
                     <button

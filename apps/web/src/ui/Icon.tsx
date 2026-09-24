@@ -78,6 +78,12 @@ const PATHS: Record<string, ReactElement> = {
       <path d="M5 19h14" />
     </>
   ),
+  'i-trash': (
+    <>
+      <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9L17.5 7" />
+      <path d="M10.5 10.5v6M13.5 10.5v6" />
+    </>
+  ),
   'i-import': (
     <>
       <path d="M12 14V4M8.5 7.5L12 4l3.5 3.5" />

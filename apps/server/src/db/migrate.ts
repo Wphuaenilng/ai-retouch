@@ -31,6 +31,10 @@ export const MIGRATIONS: Migration[] = [
     name: 'users.consent_at（隐私告知已确认时间）',
     sql: 'ALTER TABLE users ADD COLUMN consent_at TEXT',
   },
+  {
+    name: 'images.parent_image_id（同一次上传的派生关系）',
+    sql: 'ALTER TABLE images ADD COLUMN parent_image_id TEXT',
+  },
 ];
 
 const BASELINE_VERSION = 1;
