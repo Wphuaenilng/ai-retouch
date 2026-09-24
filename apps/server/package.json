@@ -10,7 +10,8 @@
     "db:seed": "tsx --env-file-if-exists=../../.env src/db/seed.ts",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
-    "smoke": "tsx --env-file-if-exists=../../.env scripts/smoke.ts"
+    "smoke": "tsx --env-file-if-exists=../../.env scripts/smoke.ts",
+    "cost-report": "tsx --env-file-if-exists=../../.env scripts/cost-report.ts"
   },
   "dependencies": {
     "@fastify/multipart": "^9.0.0",

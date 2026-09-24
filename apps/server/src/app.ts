@@ -4,6 +4,7 @@ import multipart from '@fastify/multipart';
 import { extname, join, resolve, sep } from 'node:path';
 import { config, ROOT } from './config';
 import { decodeParam } from './lib/parse';
+import { shortId, setRootLogger } from './lib/log';
 import { AppError, err, normalizeError } from './lib/errors';
 import { agentRoutes } from './routes/agent';
 import { adminRoutes } from './routes/admin';
@@ -66,6 +67,13 @@ export async function buildApp(): Promise<FastifyInstance> {
     bodyLimit: config.maxUploadTotalBytes,
     // 不开 trustProxy，req.ip 恒为代理地址，登录/上传限流就会全员共用一个桶
     trustProxy: trustProxySetting(),
+    // 每个请求一个短编号：日志里能搜，出错时也会回给前端，用户截图就能对上号
+    genReqId: () => shortId(),
+  });
+  setRootLogger(app.log);
+
+  app.addHook('onRequest', async (req, reply) => {
+    reply.header('x-request-id', req.id);
   });
 
   // SSE 的超时保护在 index.ts 里 listen 之后统一关掉（Node 默认 requestTimeout=300s 会掐断长连接）
@@ -92,7 +100,14 @@ export async function buildApp(): Promise<FastifyInstance> {
       return reply.status(status).send({ ok: false, error: { code: 'BAD_REQUEST', message: (e as Error).message } });
     }
     const ne = e instanceof AppError ? e : normalizeError(e);
-    if (ne.code === 'INTERNAL') req.log.error(e);
+    if (ne.code === 'INTERNAL') {
+      req.log.error(e);
+      // 500 是唯一"用户看到的和日志里的对不上"的一类，把编号塞进消息里才能事后对上
+      return reply.status(500).send({
+        ok: false,
+        error: { code: ne.code, message: `服务内部错误（编号 ${req.id}），联系管理员时带上这串`, details: ne.details },
+      });
+    }
     return reply.status(ne.status).send({ ok: false, error: { code: ne.code, message: ne.message, details: ne.details } });
   });
 

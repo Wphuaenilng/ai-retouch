@@ -51,7 +51,7 @@ async function storeResult(
   const b64 = img.base64.replace(/^data:[^;]+;base64,/, '');
   const buf = Buffer.from(b64, 'base64');
   const row = await saveImage({ userId: ctx.userId, kind, buf, parentTaskId: ctx.taskId });
-  await assertImageSafe(row, 'result');
+  await assertImageSafe(row, 'result', ctx.taskId);
   return row;
 }
 

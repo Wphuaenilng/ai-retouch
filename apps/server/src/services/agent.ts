@@ -1,5 +1,6 @@
 import type { PlanDTO } from '@retouch/shared';
 import { err } from '../lib/errors';
+import { log } from '../lib/log';
 import { hub } from '../lib/sse';
 import { plan } from '../agent/planner';
 import { validatePlan } from '../agent/validator';
@@ -58,7 +59,7 @@ export function approvePlan(id: string, userId: string): PlanDTO {
   if (row.status !== 'proposed') throw err('PLAN_NOT_APPROVABLE', '这个计划已经不在待确认状态了');
   savePlan(id, { status: 'approved' });
   // 不 await：HTTP 先返回，进度靠 SSE；真正的互斥在 executePlan 里抢锁
-  void executePlan(id).catch((e) => console.error('[agent] 计划执行异常', e));
+  void executePlan(id).catch((e) => log.error('计划执行异常', { err: String(e) }));
   return toPlanDTO(findPlan(id)!);
 }
 
@@ -79,7 +80,7 @@ export function retryStep(planId: string, idx: number, userId: string): PlanDTO 
     }
   }
   savePlan(planId, { status: 'approved', steps });
-  void executePlan(planId, idx).catch((e) => console.error('[agent] 重试异常', e));
+  void executePlan(planId, idx).catch((e) => log.error('步骤重试异常', { planId, idx, err: String(e) }));
   return toPlanDTO(findPlan(planId)!);
 }
 
@@ -94,7 +95,7 @@ export function skipStep(planId: string, idx: number, userId: string): PlanDTO {
   step.error = null;
   for (const s of steps) if (s.status === 'canceled') s.status = 'pending';
   savePlan(planId, { status: 'approved', steps });
-  void executePlan(planId, idx + 1).catch((e) => console.error('[agent] 跳过后继续异常', e));
+  void executePlan(planId, idx + 1).catch((e) => log.error('跳过后继续执行异常', { planId, idx, err: String(e) }));
   return toPlanDTO(findPlan(planId)!);
 }
 

@@ -42,12 +42,14 @@ export class AppError extends Error {
 
 export const err = (code: ErrorCode, message: string, details?: unknown) => new AppError(code, message, details);
 
-/** 把任意异常规整成稳定错误码，前端只认 code，不解析文案 */
+/**
+ * 把任意异常规整成稳定错误码，前端只认 code，不解析文案。
+ * 这里不打日志：调用方（setErrorHandler）带着 req.id 打，比这里多一行无前缀的更有效。
+ */
 export function normalizeError(e: unknown): AppError {
   if (e instanceof AppError) return e;
   const msg = e instanceof Error ? e.message : String(e);
   if (/timeout/i.test(msg)) return err('PROVIDER_TIMEOUT', '模型响应超时，可稍后重试');
   if (/quota|rate.?limit/i.test(msg)) return err('QUOTA_EXCEEDED', '上游限流，请稍后再试');
-  console.error('[unexpected error]', e);
-  return err('INTERNAL', '服务器内部错误，请把任务号发给管理员');
+  return err('INTERNAL', '服务器内部错误，请稍后重试');
 }

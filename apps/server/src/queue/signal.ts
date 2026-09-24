@@ -1,4 +1,5 @@
 type Handler = () => void;
+import { log } from '../lib/log';
 
 const handlers = new Set<Handler>();
 
@@ -13,7 +14,7 @@ export function wakeWorker(): void {
     try {
       h();
     } catch (e) {
-      console.error('[queue] wake 处理异常', e);
+      log.error('wake 处理异常', { err: e instanceof Error ? e.message : String(e) });
     }
   }
 }

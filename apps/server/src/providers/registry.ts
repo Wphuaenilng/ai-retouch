@@ -5,6 +5,7 @@ import { mockProvider } from './mock';
 import { seedreamProvider } from './seedream';
 import { wanxProvider } from './wanx';
 import { UpstreamError, type GenerateOptions, type ImageProvider } from './types';
+import { log } from '../lib/log';
 
 const ALL: ImageProvider[] = [seedreamProvider, wanxProvider, mockProvider];
 
@@ -52,13 +53,13 @@ export async function generate(
     try {
       const r = await p.generate(req, onProgress, opts);
       if (chain.length > 1 && failures.length) {
-        console.warn(`[provider] ${p.id} 成功，前面失败：`, failures.join(' / '));
+        log.warn('前面失败的 provider 全被跳过，这次由它成功', { provider: p.id, failed: failures.join(' / ') });
       }
       return r;
     } catch (e) {
       const msg = e instanceof UpstreamError ? `${p.id}: ${e.kind} ${e.message}` : `${p.id}: ${String(e)}`;
       failures.push(msg);
-      console.warn(`[provider] 降级 ${msg}`);
+      log.warn('上游失败，降级到下一个 provider', { detail: msg });
       if (e instanceof UpstreamError && e.kind === 'timeout') continue;
     }
   }

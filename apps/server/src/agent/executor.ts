@@ -1,6 +1,7 @@
 import { getTool, type PlanDTO } from '@retouch/shared';
 import { config } from '../config';
 import { err } from '../lib/errors';
+import { log } from '../lib/log';
 import { newId, newRequestId } from '../lib/ids';
 import { failWait, settleWait, waitFor } from '../lib/pending';
 import { hub } from '../lib/sse';
@@ -78,7 +79,7 @@ function markDependentsCanceled(steps: StepRecord[], fromIdx: number): void {
 export async function executePlan(planId: string, fromIdx = 0): Promise<void> {
   const token = newId('ex');
   if (!claimPlan(planId, token)) {
-    console.warn(`[agent] 计划 ${planId} 已有执行器在跑，忽略这次触发`);
+    log.warn('已有执行器在跑，忽略这次触发', { planId });
     return;
   }
   try {
@@ -102,7 +103,7 @@ async function runPlan(planId: string, fromIdx: number, token: string): Promise<
   const persist = (patch: { status?: PlanDTO['status']; steps?: StepRecord[]; costYuan?: number }): boolean => {
     const fresh = savePlan(planId, patch, token);
     if (!fresh) {
-      console.warn(`[agent] 计划 ${planId} 的执行权已丢失，停止写入`);
+      log.warn('执行权已丢失，停止写入', { planId });
       return false;
     }
     hub.publish(userId, { type: 'plan.updated', plan: toPlanDTO(fresh) });

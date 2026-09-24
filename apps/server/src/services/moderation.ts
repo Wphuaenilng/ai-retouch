@@ -2,6 +2,7 @@ import { config } from '../config';
 import { err } from '../lib/errors';
 import type { ImageRow } from '../store/images';
 import { loadBuffer } from './images';
+import { log } from '../lib/log';
 
 /**
  * 内容安全。默认 none（小范围邀请制），生产分享前建议开 qwen-vl：
@@ -41,13 +42,14 @@ export interface ModerationResult {
  *   result  —— 拒绝。这一张是要导出、要发给别人看的成品，宁停不错发。
  * 拒绝时给的是 MODERATION_UNAVAILABLE 而不是 MODERATION_REJECTED：服务故障不该说成用户违规。
  */
-function degrade(stage: 'upload' | 'result', reason: string, provider: string): ModerationResult {
+function degrade(stage: 'upload' | 'result', reason: string, provider: string, taskId?: string): ModerationResult {
   const blocked = stage === 'result';
-  console.warn(`[moderation] 审核不可用（${reason}），${blocked ? 'result 阶段拒绝出图' : 'upload 阶段放行'}`);
+  // taskId 是 worker 里唯一的线索：那边没有 req.id，一个计划几十步时不带它就分不出谁是谁
+  log.warn(`审核不可用，${blocked ? 'result 阶段拒绝出图' : 'upload 阶段放行'}`, { stage, reason, taskId });
   return { safe: !blocked, degraded: true, reason, provider };
 }
 
-export async function checkImage(row: ImageRow, stage: 'upload' | 'result'): Promise<ModerationResult> {
+export async function checkImage(row: ImageRow, stage: 'upload' | 'result', taskId?: string): Promise<ModerationResult> {
   if (config.MODERATION !== 'qwen-vl') return { safe: true, provider: 'none' };
 
   let res: Response;
@@ -75,21 +77,21 @@ export async function checkImage(row: ImageRow, stage: 'upload' | 'result'): Pro
       }),
     });
   } catch (e) {
-    return degrade(stage, (e as Error).name, 'qwen-vl');
+    return degrade(stage, (e as Error).name, 'qwen-vl', taskId);
   }
-  if (!res.ok) return degrade(stage, `HTTP ${res.status}`, 'qwen-vl');
+  if (!res.ok) return degrade(stage, `HTTP ${res.status}`, 'qwen-vl', taskId);
 
   try {
     const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
     const parsed = JSON.parse(json.choices?.[0]?.message?.content ?? '{}') as { safe?: boolean; reason?: string };
     return { safe: parsed.safe !== false, reason: parsed.reason, provider: 'qwen-vl' };
   } catch {
-    return degrade(stage, '返回不是可读 JSON', 'qwen-vl');
+    return degrade(stage, '返回不是可读 JSON', 'qwen-vl', taskId);
   }
 }
 
-export async function assertImageSafe(row: ImageRow, stage: 'upload' | 'result'): Promise<void> {
-  const r = await checkImage(row, stage);
+export async function assertImageSafe(row: ImageRow, stage: 'upload' | 'result', taskId?: string): Promise<void> {
+  const r = await checkImage(row, stage, taskId);
   if (r.safe) return;
   if (r.degraded) throw err('MODERATION_UNAVAILABLE', '内容审核服务暂时不可用，为避免漏审本次不出图，请稍后重试');
   throw err('MODERATION_REJECTED', `图片未通过内容审核${r.reason ? `：${r.reason}` : ''}`);

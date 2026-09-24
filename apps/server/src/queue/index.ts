@@ -4,6 +4,7 @@ import { resetPlanLocks } from '../store/plans';
 import { refund } from '../services/quota';
 import { executeTask } from '../services/tasks';
 import { onWakeup } from './signal';
+import { log } from '../lib/log';
 
 /**
  * 持久化任务队列：任务表本身就是队列（status=queued 即待办），
@@ -20,12 +21,12 @@ class Worker {
   start(): void {
     // 进程死了执行器也就没了，上次留下的计划锁必须放开，否则那些计划永远 approve 不动
     const unlocked = resetPlanLocks();
-    if (unlocked) console.log(`[queue] 释放上次残留的计划执行锁 ${unlocked} 把`);
+    if (unlocked) log.info(`释放上次残留的计划执行锁 ${unlocked} 把`);
     const stale = reapStaleRunning();
     if (stale.count) {
       // 上次进程被杀时这些任务已经预扣过配额，回收时必须退回去
       for (const userId of stale.refundUserIds) refund(userId);
-      console.log(`[queue] 回收上次中断的任务 ${stale.count} 个，退还预扣 ${stale.refundUserIds.length} 次`);
+      log.info(`回收上次中断的任务 ${stale.count} 个，退还预扣 ${stale.refundUserIds.length} 次`);
     }
     this.stopped = false;
     this.offWakeup = onWakeup(() => this.wake());
@@ -76,7 +77,7 @@ class Worker {
       await executeTask(task);
     } catch (e) {
       // executeTask 内部已兜底，这里只防意外穿透导致 worker 卡死
-      console.error('[queue] worker 未捕获异常', e);
+      log.error('worker 未捕获异常', { err: e instanceof Error ? e.message : String(e) });
     } finally {
       this.running -= 1;
       this.wake();
