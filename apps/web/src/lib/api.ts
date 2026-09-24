@@ -52,6 +52,7 @@ export const ERROR_HINTS: Record<string, string> = {
   UNAUTHORIZED: '登录状态已过期，请重新登录',
   QUOTA_EXCEEDED: '今日次数已用完，明天 0 点重置',
   MODERATION_REJECTED: '内容未通过安全审核',
+  MODERATION_UNAVAILABLE: '审核服务暂时不可用，稍后重试（为避免漏审，成品图不放行）',
   PROVIDER_TIMEOUT: '模型响应超时，点重试即可',
   PROVIDER_UNAVAILABLE: '模型未就绪，请联系管理员检查配置',
   PROVIDER_FAILED: '模型调用失败，可稍后重试',

@@ -4,6 +4,12 @@ import { closeDb } from './db/index';
 import { worker } from './queue/index';
 
 async function main(): Promise<void> {
+  // 开了审核却没配 key：每一次审核都会 401，成品图全被 fail-closed 挡下，
+  // 表现是"所有人都出不了图"。这种配置错误要在启动时就顶回去，不要拖到运行时
+  if (config.MODERATION === 'qwen-vl' && !config.LLM_API_KEY) {
+    throw new Error('MODERATION=qwen-vl 但 LLM_API_KEY 为空 —— 补上 key，或者显式设 MODERATION=none');
+  }
+
   const app = await buildApp();
   worker.start();
 
@@ -13,6 +19,10 @@ async function main(): Promise<void> {
   app.server.requestTimeout = 0;
   app.server.headersTimeout = 65_000;
   app.server.timeout = 0;
+
+  if (config.isProd && config.MODERATION === 'none') {
+    app.log.warn('[moderation] MODERATION=none：上传与生成结果都不过审。要分享给别人之前建议开 qwen-vl');
+  }
 
   app.log.info(`retouch-studio server → http://${config.HOST}:${config.PORT}  (数据目录 ${config.DATA_DIR})`);
   app.log.info(`provider 优先级：${config.providerPriority.join(' → ')}；规划器：${config.LLM_PLAN_PROVIDER}`);

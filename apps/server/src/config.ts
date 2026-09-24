@@ -66,6 +66,11 @@ const EnvSchema = z.object({
 
   /** 内容审核：none 关闭；qwen-vl 用多模态模型做一次粗筛 */
   MODERATION: z.enum(['none', 'qwen-vl']).default('none'),
+  /**
+   * 提示词关键词表，逗号分隔。给了就**整表替换**默认名单（要保留默认项就自己抄一遍），
+   * 因为"放宽"和"追加"用一份配置表达不了；留空 = 用默认名单。
+   */
+  MODERATION_BLOCK_WORDS: z.string().default(''),
 
   /** 首次启动时自动创建的管理员与邀请码（留空则不创建） */
   BOOTSTRAP_ADMIN_USERNAME: z.string().default(''),
