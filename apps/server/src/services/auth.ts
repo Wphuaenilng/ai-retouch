@@ -38,19 +38,15 @@ export async function login(username: string, password: string): Promise<{ me: M
   return { me: toMe(user), token: await issueToken(user) };
 }
 
-export async function register(
-  inviteCode: string,
-  username: string,
-  password: string,
-): Promise<{ me: MeDTO; token: string }> {
+export async function register(inviteCode: string, username: string, password: string): Promise<{ me: MeDTO; token: string }> {
   const name = (username ?? '').trim().toLowerCase();
   if (!USERNAME.test(name)) throw err('BAD_REQUEST', '用户名 3-24 位，只能用小写字母、数字、_ . -');
   if ((password ?? '').length < 8) throw err('BAD_REQUEST', '密码至少 8 位');
   const r = registerWithInvite(inviteCode, name, password);
   if (!r.ok) {
-    throw r.reason === 'invite'
-      ? err('INVITE_INVALID', '邀请码无效或已被使用')
-      : err('USERNAME_TAKEN', '这个用户名已经被占了');
+    throw r.reason === 'taken'
+      ? err('USERNAME_TAKEN', '这个用户名已经被占了')
+      : err('INVITE_INVALID', r.reason === 'expired' ? '这个邀请码已经过期了，找管理员要一个新的' : '邀请码无效或已被使用');
   }
   return { me: toMe(r.user), token: await issueToken(r.user) };
 }

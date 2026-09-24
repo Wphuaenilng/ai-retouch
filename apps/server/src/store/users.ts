@@ -33,9 +33,7 @@ export interface InviteRow {
 }
 
 export function findUserByName(username: string): UserRow | undefined {
-  return db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim().toLowerCase()) as
-    | UserRow
-    | undefined;
+  return db.prepare('SELECT * FROM users WHERE username = ?').get(username.trim().toLowerCase()) as UserRow | undefined;
 }
 
 export function findUser(id: string): UserRow | undefined {
@@ -60,19 +58,28 @@ export function registerWithInvite(
   code: string,
   username: string,
   password: string,
-): { ok: true; user: UserRow } | { ok: false; reason: 'invite' | 'taken' } {
+): { ok: true; user: UserRow } | { ok: false; reason: 'invite' | 'used' | 'expired' | 'taken' } {
   const name = username.trim().toLowerCase();
+  const key = code.trim().toUpperCase();
   return tx(() => {
     const claimed = run(
       'UPDATE invites SET used_by = ?, used_at = ? WHERE code = ? AND used_by IS NULL AND (expires_at IS NULL OR expires_at > ?)',
       '__pending__',
       nowIso(),
-      code.trim().toUpperCase(),
+      key,
       nowIso(),
     );
-    if (claimed.changes !== 1) return { ok: false as const, reason: 'invite' as const };
+    if (claimed.changes !== 1) {
+      // 抢码失败的原因要分清：过期和"已被别人用掉"给人的下一步动作完全不同
+      const row = db.prepare('SELECT used_by, expires_at FROM invites WHERE code = ?').get(key) as
+        { used_by: string | null; expires_at: string | null } | undefined;
+      if (!row) return { ok: false as const, reason: 'invite' as const };
+      if (row.used_by) return { ok: false as const, reason: 'used' as const };
+      if (row.expires_at && row.expires_at <= nowIso()) return { ok: false as const, reason: 'expired' as const };
+      return { ok: false as const, reason: 'invite' as const };
+    }
     if (findUserByName(name)) {
-      run("UPDATE invites SET used_by = NULL, used_at = NULL WHERE used_by = '__pending__'", );
+      run("UPDATE invites SET used_by = NULL, used_at = NULL WHERE used_by = '__pending__'");
       return { ok: false as const, reason: 'taken' as const };
     }
     const id = newUserId();
@@ -90,14 +97,21 @@ export function registerWithInvite(
   });
 }
 
-export function createInvites(createdBy: string | null, n = 1): string[] {
+/**
+ * validDays = 0 表示不限期。默认给期限而不是无限期：码是发给人的，
+ * 传出去之后没人管就永远躺在库里，泄露面只涨不缩。
+ * 认领侧本来就认 expires_at（registerWithInvite 的 WHERE），这里只是以前从没写值进去。
+ */
+export function createInvites(createdBy: string | null, n = 1, validDays = 30): string[] {
   const codes: string[] = [];
+  const expiresAt = validDays > 0 ? new Date(Date.now() + validDays * 86_400_000).toISOString() : null;
   for (let i = 0; i < n; i += 1) {
     const code = newInviteCode();
     run(
-      'INSERT INTO invites (code, created_by, used_by, used_at, expires_at, created_at) VALUES (?, ?, NULL, NULL, NULL, ?)',
+      'INSERT INTO invites (code, created_by, used_by, used_at, expires_at, created_at) VALUES (?, ?, NULL, NULL, ?, ?)',
       code,
       createdBy,
+      expiresAt,
       nowIso(),
     );
     codes.push(code);

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { config } from '../config';
 import { err } from '../lib/errors';
+import { intField } from '../lib/parse';
 import { providerStatus } from '../providers/registry';
 import { getQuota } from '../services/quota';
 import { globalCostToday } from '../store/usage';
@@ -66,8 +67,10 @@ export function adminRoutes(app: FastifyInstance): void {
 
   app.post('/api/admin/invites', async (req) => {
     const s = requireAdmin(req);
-    const body = (req.body ?? {}) as { count?: number };
-    const n = Math.min(Math.max(Number(body.count ?? 1) || 1, 1), 20);
-    return { ok: true, data: { codes: createInvites(s.sub, n) } };
+    const body = (req.body ?? {}) as { count?: unknown; validDays?: unknown };
+    const n = intField(body.count, { name: '数量', default: 1, min: 1, max: 20 });
+    // 0 = 不限期。给期限是默认而不是例外：码是发出去的，没人回收就一直躺在库里
+    const validDays = intField(body.validDays, { name: '有效期', default: 30, min: 0, max: 3650 });
+    return { ok: true, data: { codes: createInvites(s.sub, n, validDays), validDays } };
   });
 }
