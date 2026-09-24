@@ -2,7 +2,7 @@ import type { Capability, ProviderRequest, ProviderResult } from '@retouch/share
 import { createHash } from 'node:crypto';
 import { Rgba } from '../lib/png';
 import { sleep } from './http';
-import type { ImageProvider } from './types';
+import { UpstreamError, type ImageProvider } from './types';
 
 const ALL: Capability[] = ['text2image', 'edit', 'inpaint', 'outpaint', 'upscale', 'segment', 'portrait', 'textRender'];
 
@@ -37,15 +37,19 @@ export const mockProvider: ImageProvider = {
   capabilities: ALL,
   available: true,
   priceFor: () => 0,
-  async generate(req: ProviderRequest, onProgress): Promise<ProviderResult> {
+  async generate(req: ProviderRequest, onProgress, opts): Promise<ProviderResult> {
     const w = Math.min(req.size?.width ?? 1024, 2048);
     const h = Math.min(req.size?.height ?? 1024, 2048);
     const count = req.capability === 'text2image' ? (req.count ?? 1) : 1;
+    const stopped = (): boolean => opts?.signal?.aborted === true;
+    if (stopped()) throw new UpstreamError('timeout', '任务已取消');
 
     onProgress?.(0.18);
-    await sleep(320);
+    await sleep(320, opts?.signal);
+    if (stopped()) throw new UpstreamError('timeout', '任务已取消');
     onProgress?.(0.55);
-    await sleep(380);
+    await sleep(380, opts?.signal);
+    if (stopped()) throw new UpstreamError('timeout', '任务已取消');
     onProgress?.(0.85);
 
     const images = Array.from({ length: count }, (_, i) => {
@@ -88,7 +92,8 @@ export const mockProvider: ImageProvider = {
       return { base64: `data:image/png;base64,${buf.toString('base64')}`, mime: 'image/png', width: w, height: h };
     });
 
-    await sleep(120);
+    await sleep(120, opts?.signal);
+    if (stopped()) throw new UpstreamError('timeout', '任务已取消');
     return { images, costYuan: 0, provider: 'mock', model: 'mock-placeholder', raw: { prompt: req.prompt } };
   },
 };

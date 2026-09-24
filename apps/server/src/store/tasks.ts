@@ -133,19 +133,34 @@ export function cancelQueued(id: string, userId: string): boolean {
 /** 重试：只有失败任务能重新排队 */
 export function requeue(id: string, userId: string): boolean {
   return run(
-    "UPDATE tasks SET status = 'queued', progress = 0, error = NULL, error_code = NULL, finished_at = NULL WHERE id = ? AND user_id = ? AND status = 'failed'",
+    // 手动重试会再预扣一次，所以 charged 必须回到"未结算"，否则那次预扣永远退不回来
+    "UPDATE tasks SET status = 'queued', progress = 0, error = NULL, error_code = NULL, finished_at = NULL, charged = 0 WHERE id = ? AND user_id = ? AND status = 'failed'",
     id,
     userId,
   ).changes === 1;
 }
 
-/** 进程重启后清理：把上次没跑完的 running 任务判失败，避免永远卡在进度条 */
-export function reapStaleRunning(): number {
+/**
+ * 把某次预扣标记为"已退还"。charged 0→2 只会成功一次，
+ * 所以它就是退款幂等锁（1 表示已结算真实成本）。
+ */
+export function markRefunded(id: string): boolean {
+  return run('UPDATE tasks SET charged = 2 WHERE id = ? AND charged = 0', id).changes === 1;
+}
+
+/**
+ * 进程重启后清理：上次没跑完的 running 任务判失败，避免永远卡在进度条。
+ * 顺带把"预扣了但没结算"的行标成已退，并返回该退谁的账 —— 以前这些配额就这么漏掉了。
+ */
+export function reapStaleRunning(): { count: number; refundUserIds: string[] } {
+  const refundUserIds = all<{ user_id: string }>("SELECT user_id FROM tasks WHERE status = 'running' AND charged = 0").map(
+    (r) => r.user_id,
+  );
   const r = run(
-    "UPDATE tasks SET status = 'failed', error = '服务重启导致中断，请重试', error_code = 'INTERNAL', finished_at = ? WHERE status = 'running'",
+    "UPDATE tasks SET status = 'failed', error = '服务重启导致中断，配额已退回，请重试', error_code = 'INTERNAL', finished_at = ?, charged = CASE WHEN charged = 0 THEN 2 ELSE charged END WHERE status = 'running'",
     nowIso(),
   );
-  return r.changes;
+  return { count: r.changes, refundUserIds };
 }
 
 export function taskParams(row: TaskRow): Record<string, unknown> {

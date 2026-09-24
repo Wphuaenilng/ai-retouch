@@ -1,5 +1,6 @@
 import { config } from '../config';
 import { claimNextTask, reapStaleRunning, type TaskRow } from '../store/tasks';
+import { refund } from '../services/quota';
 import { executeTask } from '../services/tasks';
 import { onWakeup } from './signal';
 
@@ -17,7 +18,11 @@ class Worker {
 
   start(): void {
     const stale = reapStaleRunning();
-    if (stale) console.log(`[queue] 回收上次中断的任务 ${stale} 个`);
+    if (stale.count) {
+      // 上次进程被杀时这些任务已经预扣过配额，回收时必须退回去
+      for (const userId of stale.refundUserIds) refund(userId);
+      console.log(`[queue] 回收上次中断的任务 ${stale.count} 个，退还预扣 ${stale.refundUserIds.length} 次`);
+    }
     this.stopped = false;
     this.offWakeup = onWakeup(() => this.wake());
     this.timer = setInterval(() => this.drain(), 400);
@@ -31,6 +36,16 @@ class Worker {
     this.offWakeup = null;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
+  }
+
+  /** 不再领新任务后，等在飞的跑完；超过 grace 就交给下次启动的回收逻辑（会退配额） */
+  async drainInFlight(graceMs: number): Promise<number> {
+    this.stop();
+    const end = Date.now() + graceMs;
+    while (this.running > 0 && Date.now() < end) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return this.running;
   }
 
   wake(): void {

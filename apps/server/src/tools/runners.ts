@@ -11,6 +11,8 @@ export interface RunCtx {
   taskId: string;
   documentId: string | null;
   onProgress: (p: number) => void;
+  /** 任务超时或进程退出时触发；要一路传到上游 fetch */
+  signal?: AbortSignal;
 }
 
 export interface ToolRunResult {
@@ -61,7 +63,8 @@ async function call(
   promptToCheck?: string,
 ): Promise<{ row: ImageRow | null; rows: ImageRow[]; costYuan: number; provider: string; model: string }> {
   checkPrompt(promptToCheck ?? req.prompt);
-  const res = await generate(cap, { ...req, capability: cap, idempotencyKey: ctx.taskId }, ctx.onProgress);
+  const res = await generate(cap, { ...req, capability: cap, idempotencyKey: ctx.taskId }, ctx.onProgress, { signal: ctx.signal });
+  if (ctx.signal?.aborted) throw new Error('任务已取消');
   const rows: ImageRow[] = [];
   for (const img of res.images) rows.push(await storeResult(ctx, img));
   return { row: rows[0] ?? null, rows, costYuan: res.costYuan, provider: res.provider, model: res.model };

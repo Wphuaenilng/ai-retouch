@@ -16,6 +16,25 @@ handle.exec('PRAGMA journal_mode = WAL');
 handle.exec('PRAGMA foreign_keys = ON');
 handle.exec('PRAGMA busy_timeout = 5000');
 
+let closed = false;
+
+/** 关库之后还有写入 = 有任务没被取消就走到收尾，宁可报错也不要往已 checkpoint 的库里写半截 */
+function assertOpen(): void {
+  if (closed) throw new Error('[db] 数据库已关闭（服务正在退出），忽略这次写入');
+}
+
+/** 退出前 checkpoint 并关连接；WAL 长期不回收会让主库文件与日志严重失衡 */
+export function closeDb(): void {
+  if (closed) return;
+  try {
+    handle.exec('PRAGMA wal_checkpoint(TRUNCATE)');
+  } catch {
+    /* checkpoint 失败不该挡住退出 */
+  }
+  closed = true;
+  handle.close();
+}
+
 type Param = string | number | bigint | null | Uint8Array;
 
 export type DbHandle = DatabaseSync;
@@ -37,15 +56,18 @@ export interface RunResult {
 type InParam = string | number | bigint | null | Uint8Array;
 
 export function run(sql: string, ...params: unknown[]): RunResult {
+  assertOpen();
   const r = handle.prepare(sql).run(...(params.map(clean) as InParam[]));
   return { changes: Number(r.changes) };
 }
 
 export function get<T>(sql: string, ...params: unknown[]): T | undefined {
+  assertOpen();
   return handle.prepare(sql).get(...(params.map(clean) as InParam[])) as unknown as T | undefined;
 }
 
 export function all<T>(sql: string, ...params: unknown[]): T[] {
+  assertOpen();
   return handle.prepare(sql).all(...(params.map(clean) as InParam[])) as unknown as T[];
 }
 

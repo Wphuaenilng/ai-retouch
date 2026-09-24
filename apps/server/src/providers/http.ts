@@ -2,11 +2,20 @@ import { UpstreamError } from './types';
 
 const DEFAULT_TIMEOUT = 90_000;
 
-async function call<T>(url: string, init: RequestInit, timeoutMs: number): Promise<T> {
+/** 任务自己的超时/退出信号与单次请求超时并存：任一触发都要真的把 fetch 掐掉 */
+function signalFor(external: AbortSignal | undefined, timeoutMs: number): AbortSignal {
+  const t = AbortSignal.timeout(timeoutMs);
+  return external ? AbortSignal.any([external, t]) : t;
+}
+
+const aborted = (s?: AbortSignal): boolean => s?.aborted === true;
+
+async function call<T>(url: string, init: RequestInit, timeoutMs: number, signal?: AbortSignal): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
+    res = await fetch(url, { ...init, signal: signalFor(signal, timeoutMs) });
   } catch (e) {
+    if (aborted(signal)) throw new UpstreamError('timeout', '上游请求已取消（任务超时或服务退出）');
     const msg = e instanceof Error ? e.message : String(e);
     throw new UpstreamError(/timeout|abort/i.test(msg) ? 'timeout' : 'network', `上游连接失败：${msg}`);
   }
@@ -24,33 +33,60 @@ async function call<T>(url: string, init: RequestInit, timeoutMs: number): Promi
   return json as T;
 }
 
-export const postJson = <T>(url: string, body: unknown, headers: Record<string, string> = {}, timeoutMs = DEFAULT_TIMEOUT) =>
-  call<T>(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }, timeoutMs);
+export const postJson = <T>(
+  url: string,
+  body: unknown,
+  headers: Record<string, string> = {},
+  timeoutMs = DEFAULT_TIMEOUT,
+  signal?: AbortSignal,
+) =>
+  call<T>(url, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) }, timeoutMs, signal);
 
-export const getJson = <T>(url: string, headers: Record<string, string> = {}, timeoutMs = DEFAULT_TIMEOUT) =>
-  call<T>(url, { method: 'GET', headers }, timeoutMs);
+export const getJson = <T>(url: string, headers: Record<string, string> = {}, timeoutMs = DEFAULT_TIMEOUT, signal?: AbortSignal) =>
+  call<T>(url, { method: 'GET', headers }, timeoutMs, signal);
 
-export async function fetchBinary(url: string, timeoutMs = DEFAULT_TIMEOUT): Promise<{ base64: string; mime: string }> {
+export async function fetchBinary(url: string, timeoutMs = DEFAULT_TIMEOUT, signal?: AbortSignal): Promise<{ base64: string; mime: string }> {
   let res: Response;
   try {
-    res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+    res = await fetch(url, { signal: signalFor(signal, timeoutMs) });
   } catch (e) {
+    if (aborted(signal)) throw new UpstreamError('timeout', '结果下载已取消（任务超时或服务退出）');
     throw new UpstreamError('network', `下载上游结果失败：${e instanceof Error ? e.message : String(e)}`);
   }
   if (!res.ok) throw new UpstreamError('http', `下载上游结果返回 ${res.status}`, res.status);
   const buf = Buffer.from(await res.arrayBuffer());
-  return { base64: `data:${res.headers.get('content-type') ?? 'image/png'};base64,${buf.toString('base64')}`, mime: res.headers.get('content-type') ?? 'image/png' };
+  const mime = res.headers.get('content-type') ?? 'image/png';
+  return { base64: `data:${mime};base64,${buf.toString('base64')}`, mime };
 }
 
-export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** 可被取消的等待：signal 触发时立刻返回，让调用方的 aborted 检查马上生效 */
+export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    function onAbort(): void {
+      clearTimeout(timer);
+      resolve();
+    }
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
 
-/** 轮询直到成功/失败/超时，间隔指数退避 */
+/** 轮询直到成功/失败/超时/被取消，间隔指数退避 */
 export async function poll<T>(
   fn: () => Promise<{ done: boolean; value?: T; failed?: string }>,
-  { intervalMs = 1500, timeoutMs = 120_000, onProgress }: { intervalMs?: number; timeoutMs?: number; onProgress?: (elapsed: number) => void },
+  {
+    intervalMs = 1500,
+    timeoutMs = 120_000,
+    onProgress,
+    signal,
+  }: { intervalMs?: number; timeoutMs?: number; onProgress?: (elapsed: number) => void; signal?: AbortSignal },
 ): Promise<T> {
   const start = Date.now();
   for (;;) {
+    if (aborted(signal)) throw new UpstreamError('timeout', '轮询已取消（任务超时或服务退出）');
     const r = await fn();
     if (r.done) {
       if (r.failed) throw new UpstreamError('bad_response', r.failed);
@@ -59,6 +95,6 @@ export async function poll<T>(
     const elapsed = Date.now() - start;
     if (elapsed > timeoutMs) throw new UpstreamError('timeout', '上游任务超时');
     onProgress?.(Math.min(0.9, elapsed / timeoutMs));
-    await sleep(Math.min(intervalMs * (1 + elapsed / 20_000), 6000));
+    await sleep(Math.min(intervalMs * (1 + elapsed / 20_000), 6000), signal);
   }
 }

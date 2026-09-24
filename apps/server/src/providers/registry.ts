@@ -4,7 +4,7 @@ import { err } from '../lib/errors';
 import { mockProvider } from './mock';
 import { seedreamProvider } from './seedream';
 import { wanxProvider } from './wanx';
-import { UpstreamError, type ImageProvider } from './types';
+import { UpstreamError, type GenerateOptions, type ImageProvider } from './types';
 
 const ALL: ImageProvider[] = [seedreamProvider, wanxProvider, mockProvider];
 
@@ -38,6 +38,7 @@ export async function generate(
   cap: Capability,
   req: ProviderRequest,
   onProgress?: (p: number) => void,
+  opts?: GenerateOptions,
 ): Promise<ProviderResult> {
   const chain = chainFor(cap);
   if (!chain.length) {
@@ -49,7 +50,7 @@ export async function generate(
   const failures: string[] = [];
   for (const p of chain) {
     try {
-      const r = await p.generate(req, onProgress);
+      const r = await p.generate(req, onProgress, opts);
       if (chain.length > 1 && failures.length) {
         console.warn(`[provider] ${p.id} 成功，前面失败：`, failures.join(' / '));
       }

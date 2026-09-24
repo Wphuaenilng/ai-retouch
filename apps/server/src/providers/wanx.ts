@@ -50,7 +50,7 @@ export const wanxProvider: ImageProvider = {
   },
   priceFor: (c) => PRICES[c] ?? 0.26,
 
-  async generate(req: ProviderRequest, onProgress): Promise<ProviderResult> {
+  async generate(req: ProviderRequest, onProgress, opts): Promise<ProviderResult> {
     const base = config.DASHSCOPE_BASE_URL.replace(/\/$/, '');
     const isT2i = req.capability === 'text2image';
     const w = Math.min(req.size?.width ?? 1024, 2048);
@@ -79,14 +79,14 @@ export const wanxProvider: ImageProvider = {
     };
 
     onProgress?.(0.08);
-    const submitted = await postJson<DashSubmit>(`${base}${isT2i ? T2I_PATH : EDIT_PATH}`, body, headers, 60_000);
+    const submitted = await postJson<DashSubmit>(`${base}${isT2i ? T2I_PATH : EDIT_PATH}`, body, headers, 60_000, opts?.signal);
     if (submitted.code) throw new UpstreamError('bad_response', `万相：${submitted.message ?? submitted.code}`);
     const taskId = submitted.output?.task_id;
     if (!taskId) throw new UpstreamError('bad_response', '万相未返回 task_id');
 
     const done = await poll<DashPoll>(
       async () => {
-        const j = await getJson<DashPoll>(`${base}/tasks/${taskId}`, { authorization: headers.authorization }, 30_000);
+        const j = await getJson<DashPoll>(`${base}/tasks/${taskId}`, { authorization: headers.authorization }, 30_000, opts?.signal);
         const st = j.output?.task_status;
         if (st === 'SUCCEEDED') return { done: true, value: j };
         if (st === 'FAILED' || st === 'CANCELED') {
@@ -94,7 +94,7 @@ export const wanxProvider: ImageProvider = {
         }
         return { done: false };
       },
-      { intervalMs: 1500, timeoutMs: config.TASK_TIMEOUT_MS, onProgress: (e) => onProgress?.(0.1 + e * 0.8) },
+      { intervalMs: 1500, timeoutMs: config.TASK_TIMEOUT_MS, onProgress: (e) => onProgress?.(0.1 + e * 0.8), signal: opts?.signal },
     );
 
     const results = done.output?.results ?? [];
@@ -103,7 +103,7 @@ export const wanxProvider: ImageProvider = {
       results.map(async (r) => {
         const url = r.url ?? r.image_url;
         if (!url) throw new UpstreamError('bad_response', `万相结果缺 URL：${r.message ?? r.code ?? ''}`);
-        return url.startsWith('data:') ? { base64: url, mime: 'image/png' } : await fetchBinary(url);
+        return url.startsWith('data:') ? { base64: url, mime: 'image/png' } : await fetchBinary(url, undefined, opts?.signal);
       }),
     );
     onProgress?.(0.95);

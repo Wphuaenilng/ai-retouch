@@ -10,6 +10,7 @@ import {
   insertTask,
   listTasks,
   markFailed,
+  markRefunded,
   markSucceeded,
   requeue,
   setProgress,
@@ -102,13 +103,37 @@ export function submitTask(input: {
   return { task: dto, row };
 }
 
-class TaskTimeout extends Error {}
+export class TaskTimeout extends Error {}
 
-function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+/**
+ * 超时不再只是"不等了"：以前 withTimeout 只 reject，runner 与它背后的 fetch/poll 会继续把
+ * 上游调用跑完 —— 钱花了、结果丢掉、并发槽还提前释放了。现在把 signal 交下去真的掐断。
+ */
+export function withAbort<T>(run: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {
+  const ac = new AbortController();
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new TaskTimeout()), ms);
-    p.then(resolve, reject).finally(() => clearTimeout(timer));
+    const timer = setTimeout(() => {
+      ac.abort();
+      reject(new TaskTimeout());
+    }, ms);
+    run(ac.signal).then(
+      (v) => {
+        clearTimeout(timer);
+        // 迟到一步的成功不再算数：结果已经不该落库
+        if (ac.signal.aborted) reject(new TaskTimeout());
+        else resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e), { cause: e }));
+      },
+    );
   });
+}
+
+/** 一次预扣只退一次：charged 0→2 的翻转就是幂等锁 */
+function refundPrecount(taskId: string, userId: string): void {
+  if (markRefunded(taskId)) refund(userId);
 }
 
 /** worker 的执行体。成功/失败都会推 SSE */
@@ -132,8 +157,8 @@ export async function executeTask(row: TaskRow): Promise<void> {
   };
 
   try {
-    const result = await withTimeout(
-      runner({ userId: row.user_id, taskId: row.id, documentId: row.document_id, onProgress }, taskParams(row)),
+    const result = await withAbort(
+      (signal) => runner({ userId: row.user_id, taskId: row.id, documentId: row.document_id, onProgress, signal }, taskParams(row)),
       config.TASK_TIMEOUT_MS,
     );
     setProvider(row.id, result.provider, result.model);
@@ -144,12 +169,12 @@ export async function executeTask(row: TaskRow): Promise<void> {
   } catch (e) {
     const ne =
       e instanceof TaskTimeout
-        ? err('PROVIDER_TIMEOUT', `模型超时（> ${Math.round(config.TASK_TIMEOUT_MS / 1000)}s），可重试`)
+        ? err('PROVIDER_TIMEOUT', `模型超时（> ${Math.round(config.TASK_TIMEOUT_MS / 1000)}s），已取消上游请求，可重试`)
         : normalizeError(e);
     const retriable = ne.code === 'PROVIDER_TIMEOUT' || ne.code === 'PROVIDER_UNAVAILABLE';
     const willRetry = retriable && row.attempts <= config.TASK_MAX_RETRY;
     markFailed(row.id, ne.code, ne.message, { requeue: willRetry });
-    if (!willRetry) refund(row.user_id);
+    if (!willRetry) refundPrecount(row.id, row.user_id);
     publishFinal(row.user_id, row.id);
     if (willRetry) wakeWorker();
   }
@@ -190,7 +215,7 @@ export function retryTask(id: string, userId: string): TaskDTO {
 export function cancelTask(id: string, userId: string): TaskDTO {
   requireTask(id, userId);
   if (!cancelQueued(id, userId)) throw err('BAD_REQUEST', '任务已在执行或已结束，无法取消');
-  refund(userId);
+  refundPrecount(id, userId);
   const fresh = findTask(id)!;
   hub.publish(userId, { type: 'task.failed', task: toTaskDTO(fresh) });
   hub.publish(userId, { type: 'quota.changed', quota: getQuota(userId) });

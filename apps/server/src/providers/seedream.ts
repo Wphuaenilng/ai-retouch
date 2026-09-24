@@ -33,7 +33,7 @@ export const seedreamProvider: ImageProvider = {
   },
   priceFor: (c) => PRICES[c] ?? 0.26,
 
-  async generate(req: ProviderRequest, onProgress): Promise<ProviderResult> {
+  async generate(req: ProviderRequest, onProgress, opts): Promise<ProviderResult> {
     const w = Math.min(req.size?.width ?? 1024, 4096);
     const h = Math.min(req.size?.height ?? 1024, 4096);
     const body: Record<string, unknown> = {
@@ -54,6 +54,7 @@ export const seedreamProvider: ImageProvider = {
       body,
       { authorization: `Bearer ${config.ARK_API_KEY}` },
       120_000,
+      opts?.signal,
     );
     onProgress?.(0.9);
 
@@ -64,7 +65,7 @@ export const seedreamProvider: ImageProvider = {
     const images = await Promise.all(
       items.map(async (it) => {
         if (it.b64_json) return { base64: `data:image/png;base64,${it.b64_json}`, mime: 'image/png' };
-        if (it.url) return await fetchBinary(it.url);
+        if (it.url) return await fetchBinary(it.url, undefined, opts?.signal);
         throw new UpstreamError('bad_response', 'Seedream 返回项里没有图片数据');
       }),
     );

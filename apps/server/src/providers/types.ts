@@ -1,5 +1,10 @@
 import type { Capability, ProviderRequest, ProviderResult } from '@retouch/shared';
 
+/** 任务级控制：worker 超时或进程退出时，适配器要真的把上游请求掐掉，而不是让钱花完再丢结果 */
+export interface GenerateOptions {
+  signal?: AbortSignal;
+}
+
 export interface ImageProvider {
   readonly id: string;
   readonly label: string;
@@ -8,7 +13,7 @@ export interface ImageProvider {
   readonly available: boolean;
   /** 元/张，用于成本统计与配额 */
   priceFor(cap: Capability): number;
-  generate(req: ProviderRequest, onProgress?: (p: number) => void): Promise<ProviderResult>;
+  generate(req: ProviderRequest, onProgress?: (p: number) => void, opts?: GenerateOptions): Promise<ProviderResult>;
 }
 
 export type UpstreamKind = 'timeout' | 'http' | 'network' | 'bad_response';
