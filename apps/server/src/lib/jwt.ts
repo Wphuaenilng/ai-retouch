@@ -8,6 +8,8 @@ export interface SessionClaims extends JWTPayload {
   sub: string;
   username: string;
   role: 'user' | 'admin';
+  /** 签发时的用户会话版本号；与库里的不一致就说明这个 token 已被吊销 */
+  tv: number;
 }
 
 export function signToken(claims: Omit<SessionClaims, keyof JWTPayload>): Promise<string> {

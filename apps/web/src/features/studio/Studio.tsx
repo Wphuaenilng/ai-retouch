@@ -3,10 +3,77 @@ import { useNavigate } from 'react-router-dom';
 import { getTool, toolsByGroup, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { prepareUpload } from '../../lib/image';
-import { useEvent } from '../../lib/sse';
+import { useEvent } from '../../lib/sse-bus';
 import { Icon } from '../../ui/Icon';
 import { Splitter, useColWidth } from '../../ui/Splitter';
 import { ToolForm } from '../tools/ToolForm';
+
+/** 账号：改密码。改完服务端会吊销所有会话，所以这里必须重新登录。 */
+function AccountMenu({ username }: { username: string }): ReactElement {
+  const nav = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [cur, setCur] = useState('');
+  const [nxt, setNxt] = useState('');
+  const [msg, setMsg] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (): Promise<void> => {
+    setBusy(true);
+    setMsg('');
+    try {
+      await api.post('/api/auth/password', { current: cur, next: nxt });
+      setCur('');
+      setNxt('');
+      setMsg('已修改，正在回到登录页…');
+      setTimeout(() => void nav('/login'), 900);
+    } catch (e) {
+      setMsg(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <button className="btn ghost" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        账号
+      </button>
+      {open && (
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 'calc(100% + 8px)',
+            width: 250,
+            padding: 14,
+            background: 'var(--panel)',
+            border: '1px solid var(--line)',
+            borderRadius: 12,
+            boxShadow: '0 24px 70px rgba(0,0,0,.55)',
+            zIndex: 50,
+          }}
+        >
+          <div className="hint mono" style={{ marginBottom: 8 }}>
+            {username}
+          </div>
+          <div className="field">
+            <label>当前密码</label>
+            <input className="input" type="password" value={cur} onChange={(e) => setCur(e.target.value)} autoComplete="current-password" />
+          </div>
+          <div className="field">
+            <label>新密码（至少 8 位）</label>
+            <input className="input" type="password" value={nxt} onChange={(e) => setNxt(e.target.value)} autoComplete="new-password" />
+          </div>
+          <button className="btn primary" disabled={busy || !cur || nxt.length < 8} onClick={() => void submit()}>
+            {busy ? '提交中…' : '修改密码'}
+          </button>
+          {msg && <div className="hint" style={{ marginTop: 8 }}>{msg}</div>}
+          <div className="hint" style={{ marginTop: 8 }}>改密后所有设备都要重新登录。</div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** 量出容器可用尺寸，图片按它适配 */
 function useBox(): [RefObject<HTMLDivElement | null>, { w: number; h: number }] {
@@ -293,7 +360,8 @@ export function StudioPage(): ReactElement {
               管理
             </button>
           )}
-          <button className="btn ghost" onClick={() => void api.post('/api/auth/logout').then(() => nav('/login'))}>
+          {me && <AccountMenu username={me.username} />}
+          <button className="btn ghost" onClick={() => void api.post('/api/auth/logout').then(() => nav('/login')).catch(() => nav('/login'))}>
             退出
           </button>
         </div>

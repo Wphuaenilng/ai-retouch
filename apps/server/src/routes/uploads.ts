@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { config } from '../config';
 import { err } from '../lib/errors';
 import { saveImage, toDTO } from '../services/images';
 import { assertImageSafe } from '../services/moderation';
@@ -28,9 +29,15 @@ export function uploadRoutes(app: FastifyInstance): void {
     if (!req.isMultipart()) throw err('BAD_REQUEST', '需要 multipart/form-data');
 
     const files: Record<string, { buf: Buffer; mime?: string }> = {};
+    let total = 0;
     for await (const part of req.parts()) {
       if (part.type !== 'file') continue;
       const buf = await part.toBuffer();
+      total += buf.length;
+      // 单文件有 multipart 的 fileSize 限制，但"一次传四个"的总量得自己盯，否则并发上传能把内存吃满
+      if (total > config.maxUploadTotalBytes) {
+        throw err('FILE_TOO_LARGE', `一次上传合计最大 ${config.MAX_UPLOAD_TOTAL_MB}MB`);
+      }
       files[part.fieldname] = { buf, mime: part.mimetype };
     }
     // 遮罩可以单独上传：画布上涂一片选区时，用户手上并没有"原图"要传

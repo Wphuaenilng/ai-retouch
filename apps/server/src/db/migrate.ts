@@ -23,7 +23,10 @@ export const MIGRATIONS: Migration[] = [
     sql: `ALTER TABLE plans ADD COLUMN exec_token TEXT;
           ALTER TABLE plans ADD COLUMN exec_started_at TEXT;`,
   },
-  // 下一条的样子：ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0
+  {
+    name: 'users.token_version（会话可吊销）',
+    sql: 'ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0',
+  },
 ];
 
 const BASELINE_VERSION = 1;

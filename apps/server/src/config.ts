@@ -21,6 +21,14 @@ const EnvSchema = z.object({
 
   JWT_SECRET: z.string().min(16).default('dev-only-insecure-secret-change-me'),
   COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
+  /**
+   * 反向代理信任范围。不开的话 req.ip 永远是代理的 IP，登录/上传限流就会
+   * 全体用户共用一个桶（一个人就能把所有人锁在门外）。
+   * 只接受 IP / CIDR 列表（Fastify 的 proxy-addr.compile 不认 'private' 这类关键字），
+   * 默认是本机回环 + 常见内网段（Docker  bridge 网络就落在这里），公网传来的
+   * X-Forwarded-For 一律不信。裸跑不接代理时设成 false。
+   */
+  TRUST_PROXY: z.string().default('127.0.0.1, ::1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16'),
   /** 签名图片外链用；上游模型要求公网可访问时必须配成真实域名 */
   PUBLIC_BASE_URL: z.string().default('http://127.0.0.1:8787'),
 
@@ -51,6 +59,8 @@ const EnvSchema = z.object({
   CLIENT_STEP_TIMEOUT_MS: z.coerce.number().int().default(60_000),
 
   MAX_UPLOAD_MB: z.coerce.number().default(20),
+  /** 一次上传请求的总字节上限（原图+编辑副本+缩略图+遮罩 会一起发过来） */
+  MAX_UPLOAD_TOTAL_MB: z.coerce.number().default(60),
   EDIT_COPY_MAX_EDGE: z.coerce.number().int().default(2048),
   THUMB_MAX_EDGE: z.coerce.number().int().default(256),
 
@@ -82,6 +92,7 @@ export const config = {
     .map((s) => s.trim())
     .filter(Boolean),
   maxUploadBytes: Math.round(raw.MAX_UPLOAD_MB * 1024 * 1024),
+  maxUploadTotalBytes: Math.round(raw.MAX_UPLOAD_TOTAL_MB * 1024 * 1024),
   /** 有 key 才认为该 provider 可用 */
   availableProviders: {
     mock: true,

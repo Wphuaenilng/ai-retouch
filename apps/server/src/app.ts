@@ -46,13 +46,26 @@ function originGuard(origin: string | undefined, host: string | undefined): void
   }
 }
 
+/** 只信列出的代理范围内的 X-Forwarded-For；'false'/空 = 谁都不信（裸跑时用） */
+function trustProxySetting(): string | boolean {
+  const raw = config.TRUST_PROXY.trim();
+  if (!raw || raw.toLowerCase() === 'false') return false;
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
 export async function buildApp(): Promise<FastifyInstance> {
   migrate();
   seed();
 
   const app = Fastify({
     logger: { level: process.env.LOG_LEVEL ?? (config.isProd ? 'warn' : 'info') },
-    bodyLimit: 4 * 1024 * 1024,
+    bodyLimit: config.maxUploadTotalBytes,
+    // 不开 trustProxy，req.ip 恒为代理地址，登录/上传限流就会全员共用一个桶
+    trustProxy: trustProxySetting(),
   });
 
   // SSE 的超时保护在 index.ts 里 listen 之后统一关掉（Node 默认 requestTimeout=300s 会掐断长连接）

@@ -4,7 +4,7 @@ import { getTool, visibleTools, type DocumentDTO, type ImageDTO, type MeDTO, typ
 import { api, errorText } from '../../lib/api';
 import { runClientTool } from '../../lib/clientTools';
 import { canvasToBlob } from '../../lib/image';
-import { useEvent, onSseOpen } from '../../lib/sse';
+import { useEvent, onSseOpen } from '../../lib/sse-bus';
 import { useEditor } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
 import { Splitter, useColWidth } from '../../ui/Splitter';

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
 import { api, errorText } from '../../lib/api';
 import { runClientTool } from '../../lib/clientTools';
-import { useEvent } from '../../lib/sse';
+import { useEvent } from '../../lib/sse-bus';
 import type { PlanDTO, PlanStepDTO } from '@retouch/shared';
 import { Icon } from '../../ui/Icon';
 

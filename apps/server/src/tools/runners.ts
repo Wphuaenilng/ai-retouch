@@ -222,12 +222,21 @@ export const RUNNERS: Record<string, Runner> = {
   merge_images: async (ctx, p) => {
     const ids = (Array.isArray(p.imageIds) ? p.imageIds : []).map(String).slice(0, 4);
     if (ids.length < 2) throw err('TOOL_PARAMS_INVALID', '多图融合至少需要两张图');
-    const refs = await Promise.all(ids.map((id) => refOf(ctx, id).then((x) => x.ref)));
-    const first = await refOf(ctx, ids[0]);
+    const rows = ids.map((id) => requireOwned(id, ctx.userId));
+    // 每张图都要 base64 塞进同一个请求体，先把总量卡住，而不是等进程 OOM
+    const totalBytes = rows.reduce((a, r) => a + r.bytes, 0);
+    if (totalBytes > config.maxUploadTotalBytes) {
+      throw err(
+        'TOOL_PARAMS_INVALID',
+        `输入图合计 ${Math.round(totalBytes / 1048576)}MB，超过 ${config.MAX_UPLOAD_TOTAL_MB}MB 上限；请减少张数或改用编辑副本`,
+      );
+    }
+    const refs = await Promise.all(rows.map((r) => toProviderRef(r)));
+    const first = rows[0]!;
     const r = await call(ctx, 'edit', {
       prompt: str(p.prompt) ?? '把后面的图中的元素自然合成到第一张图中，光影与透视一致',
       images: refs,
-      size: { width: first.row.width, height: first.row.height },
+      size: { width: first.width, height: first.height },
     });
     return { resultImageId: r.row?.id ?? null, costYuan: r.costYuan, provider: r.provider, model: r.model };
   },

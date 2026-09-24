@@ -1,4 +1,4 @@
-import { all, db, nowIso, run, tx } from '../db/index';
+import { all, db, get, nowIso, run, tx } from '../db/index';
 import { newInviteCode, newUserId } from '../lib/ids';
 import { hashPassword, verifyPassword } from '../lib/password';
 import { config } from '../config';
@@ -9,7 +9,18 @@ export interface UserRow {
   password_hash: string;
   role: 'user' | 'admin';
   quota_per_day: number;
+  token_version: number;
   created_at: string;
+}
+
+/** 会话吊销：版本号一变，之前签出的 token 全部作废 */
+export function bumpTokenVersion(id: string): number {
+  run('UPDATE users SET token_version = token_version + 1 WHERE id = ?', id);
+  return Number(get<{ token_version: number }>('SELECT token_version FROM users WHERE id = ?', id)?.token_version ?? 0);
+}
+
+export function setPassword(id: string, passwordHash: string): void {
+  run('UPDATE users SET password_hash = ? WHERE id = ?', passwordHash, id);
 }
 
 export interface InviteRow {

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from '../config';
 import { clearSessionCookie, serializeSessionCookie, SESSION_COOKIE } from '../lib/cookies';
 import { err } from '../lib/errors';
-import { login, meFromClaims, register } from '../services/auth';
+import { changePassword, login, logout, meFromClaims, register } from '../services/auth';
 import { limit, requireUser } from './_http';
 
 const MAX_AGE = 30 * 24 * 3600;
@@ -34,9 +34,24 @@ export function authRoutes(app: FastifyInstance): void {
     return { ok: true, data: { me } };
   });
 
-  app.post('/api/auth/logout', async (_req, reply) => {
+  app.post('/api/auth/logout', async (req, reply) => {
+    const s = requireUser(req);
+    logout(s.sub); // 让这颗 token 立刻作废，而不只是清 cookie
     reply.header('set-cookie', clearSessionCookie());
     return { ok: true, data: { loggedOut: true } };
+  });
+
+  const passwordBody = z.object({ current: z.string().min(1).max(128), next: z.string().min(8).max(128) });
+
+  app.post('/api/auth/password', async (req, reply) => {
+    const s = requireUser(req);
+    limit(req, 'password', 5, 60_000);
+    const p = passwordBody.safeParse(req.body ?? {});
+    if (!p.success) throw err('BAD_REQUEST', '新密码至少 8 位');
+    changePassword(s.sub, p.data.current, p.data.next);
+    // 改密会吊销所有会话（包括这一个），所以要重新登录
+    reply.header('set-cookie', clearSessionCookie());
+    return { ok: true, data: { changed: true, reloginRequired: true } };
   });
 
   app.get('/api/me', async (req) => {

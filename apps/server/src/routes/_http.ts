@@ -1,9 +1,10 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { err } from '../lib/errors';
 import { take } from '../lib/ratelimit';
+import { sessionValid } from '../services/auth';
 import { verifyToken, type SessionClaims } from '../lib/jwt';
 import { parseCookies, SESSION_COOKIE } from '../lib/cookies';
-import { findUser } from '../store/users';
+import type { UserRow } from '../store/users';
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -11,20 +12,22 @@ declare module 'fastify' {
   }
 }
 
+/** 会话 + 库里的用户行；role 已经按库校正过 */
+export type Session = SessionClaims & { user: UserRow };
+
 export async function authPreHandler(req: FastifyRequest): Promise<void> {
   const cookies = parseCookies(req.headers.cookie);
   const token = cookies[SESSION_COOKIE];
   req.session = token ? await verifyToken(token) : null;
 }
 
-export function requireUser(req: FastifyRequest): SessionClaims {
+export function requireUser(req: FastifyRequest): Session {
   if (!req.session) throw err('UNAUTHORIZED', '登录状态已过期，请重新登录');
-  const user = findUser(req.session.sub);
-  if (!user) throw err('UNAUTHORIZED', '账号已不存在');
-  return req.session;
+  const user = sessionValid(req.session);
+  return { ...req.session, role: user.role, user };
 }
 
-export function requireAdmin(req: FastifyRequest): SessionClaims {
+export function requireAdmin(req: FastifyRequest): Session {
   const s = requireUser(req);
   if (s.role !== 'admin') throw err('FORBIDDEN', '需要管理员权限');
   return s;
