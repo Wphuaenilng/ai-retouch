@@ -4,6 +4,9 @@ services:
       context: .
       dockerfile: deploy/Dockerfile
     restart: unless-stopped
+    # PID 1 收不到 SIGTERM 时由 init 转发；优雅退出要等在飞任务，留 15s
+    init: true
+    stop_grace_period: 15s
     environment:
       NODE_ENV: production
       HOST: 0.0.0.0
@@ -25,6 +28,8 @@ services:
       PER_USER_DAILY_CALLS: ${PER_USER_DAILY_CALLS:-30}
       DAILY_BUDGET_YUAN: ${DAILY_BUDGET_YUAN:-200}
       MODERATION: ${MODERATION:-qwen-vl}
+      # 备份要落在卷里：默认 /data/backups（见 deploy/backup.sh）
+      BACKUP_DIR: /data/backups
       BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
       BOOTSTRAP_INVITE_CODE: ${BOOTSTRAP_INVITE_CODE:-}
@@ -41,6 +46,10 @@ services:
   web:
     image: caddy:2-alpine
     restart: unless-stopped
+    # Caddyfile 里是 {$SITE_ADDRESS:localhost}：不注入的话站点地址就恒为 localhost，
+    # 真实域名的请求会被 Caddy 拒绝、也签不出证书（README 的部署流程因此走不通）
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?请在 .env 里设置 SITE_ADDRESS（如 retouch.example.com；本地试跑填 localhost:8080）}
     ports:
       - "80:80"
       - "443:443"

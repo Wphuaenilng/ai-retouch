@@ -132,7 +132,12 @@ export async function buildApp(): Promise<FastifyInstance> {
       if (candidate !== WEB_DIST && !candidate.startsWith(WEB_DIST + sep)) throw err('FORBIDDEN', '非法路径');
       if (existsSync(candidate) && statSync(candidate).isFile()) {
         reply.header('content-type', MIME[extname(candidate)] ?? 'application/octet-stream');
-        if (extname(candidate) !== '.html') reply.header('cache-control', 'public, max-age=31536000, immutable');
+        // 只有带内容哈希的 assets 才配 immutable；html 必须每次回源，
+        // 否则发新版后老用户拿到的还是旧 hash 的入口，永远更新不到
+        reply.header(
+          'cache-control',
+          extname(candidate) === '.html' || !candidate.includes(`${sep}assets${sep}`) ? 'no-cache' : 'public, max-age=31536000, immutable',
+        );
         return reply.send(readFileSync(candidate));
       }
       // SPA 回退

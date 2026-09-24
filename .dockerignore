@@ -5,6 +5,14 @@ backups/
 .env
 .env.local
 apps/web/dist/
-design/_*
+**/*.tsbuildinfo
 .git/
+.github/
 *.log
+
+# 镜像里用不到的东西：设计稿（4MB 位图）、测试与冒烟脚本、文档
+design/
+docs/
+apps/server/test/
+apps/web/test/
+apps/server/scripts/

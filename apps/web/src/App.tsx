@@ -1,12 +1,22 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { lazy, Suspense, useEffect, useState, type ReactElement } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import type { MeDTO } from '@retouch/shared';
 import { api } from './lib/api';
 import { SseBridge } from './lib/sse';
 import { LoginPage } from './features/auth/Login';
 import { StudioPage } from './features/studio/Studio';
-import { EditorPage } from './features/editor/Editor';
-import { AdminPage } from './features/admin/Admin';
+
+// 编辑台把 konva/react-konva 整块拖进来（约 500KB），登录页与工具箱没必要为它买单
+const EditorPage = lazy(() => import('./features/editor/Editor').then((m) => ({ default: m.EditorPage })));
+const AdminPage = lazy(() => import('./features/admin/Admin').then((m) => ({ default: m.AdminPage })));
+
+const Loading = (): ReactElement => (
+  <div className="shell">
+    <div className="cv" style={{ display: 'grid', placeItems: 'center' }}>
+      <div className="empty">正在装载…</div>
+    </div>
+  </div>
+);
 
 export function App(): ReactElement {
   const [state, setState] = useState<'loading' | 'out' | 'in'>('loading');
@@ -54,14 +64,16 @@ export function App(): ReactElement {
   return (
     <>
       <SseBridge enabled />
-      <Routes>
-        <Route path="/" element={<Navigate to="/studio" replace />} />
-        <Route path="/login" element={<Navigate to="/studio" replace />} />
-        <Route path="/studio" element={<StudioPage />} />
-        <Route path="/editor/:id" element={<EditorPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="*" element={<Navigate to="/studio" replace />} />
-      </Routes>
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/studio" replace />} />
+          <Route path="/login" element={<Navigate to="/studio" replace />} />
+          <Route path="/studio" element={<StudioPage />} />
+          <Route path="/editor/:id" element={<EditorPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={<Navigate to="/studio" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

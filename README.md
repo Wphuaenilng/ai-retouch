@@ -5,6 +5,8 @@
 
 ## 快速开始（本机开发）
 
+前置：Node **≥ 22.13**（`node:sqlite` 在这个版本前还藏在 `--experimental-sqlite` 后面，`--env-file-if-exists` 也要 22.9+）、pnpm 10（`corepack enable` 即可按 `packageManager` 装对）。
+
 ```bash
 cp .env.example .env          # 默认即可跑：Mock 上游，不需要任何 API Key
 pnpm install
@@ -18,12 +20,13 @@ pnpm dev                      # 起服务端 8787 + 前端 5173（Vite 代理 /a
 
 ## 验证手段
 
-| 命令                                  | 覆盖                                                                               |
-| ------------------------------------- | ---------------------------------------------------------------------------------- |
-| `pnpm typecheck`                      | 三个包全量类型检查                                                                 |
-| `pnpm test`                           | 计划校验器、规则式规划器、PNG 编解码（19 例）                                      |
-| `pnpm --filter @retouch/server smoke` | 端到端 20 项：注册/邀请码一次性/越权/上传/任务/SSE/结果下载/Agent 多步/配额/错误码 |
-| `pnpm build`                          | 前端产物构建                                                                       |
+| 命令                                  | 覆盖                                                                                                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm verify`                         | 上面全部的串联闸门（typecheck + lint + test + build），提交前跑这个就是绿的                                                                  |
+| `pnpm typecheck`                      | 三个包全量类型检查                                                                                                                           |
+| `pnpm test`                           | 76 例：迁移与版本表、配额账本、任务超时取消、计划抢占锁、计划校验器、规则式规划器、PNG 编解码、画布矩阵、编辑器 store（58 服务端 + 18 前端） |
+| `pnpm --filter @retouch/server smoke` | 端到端 23 项：注册/邀请码一次性/越权/上传/任务/SSE/结果下载/遮罩直传/Agent 多步/配额/错误码                                                           |
+| `pnpm build`                          | 前端产物构建（编辑台按路由懒加载，首屏 399KB / gzip 126KB）                                                                                  |
 
 冒烟脚本要求服务已在跑，且 `.env` 配了 `BOOTSTRAP_ADMIN_*`（可用 `SMOKE_ADMIN_USER/SMOKE_ADMIN_PASS` 覆盖）。
 
@@ -46,16 +49,27 @@ MODERATION=qwen-vl         # 内容审核（分享给别人之前建议开）
 ## 部署
 
 ```bash
-cp .env.example .env   # 填 JWT_SECRET / PUBLIC_BASE_URL / 各 key
+cp .env.example .env   # 必填 JWT_SECRET / PUBLIC_BASE_URL / SITE_ADDRESS，以及各 key
 docker compose up -d --build
 ```
 
-Caddy 负责 HTTPS 与 SSE 不缓冲（`flush_interval -1`）。备份：`deploy/backup.sh`（SQLite VACUUM 快照 + 图片打包，保留 14 天）。
+Caddy 负责 HTTPS 与 SSE 不缓冲（`flush_interval -1`）。`SITE_ADDRESS` 没设的话 compose 直接报错退出，不再静默签一个 `localhost` 证书。
+
+备份：`./deploy/backup.sh`（本机）或 `docker compose exec app /app/deploy/backup.sh`（容器内）。SQLite `VACUUM INTO` 快照 + 图片打包，写到 `$BACKUP_DIR`（compose 里是卷内的 `/data/backups`），保留 14 天，目录里留一个 `latest.db` 指向最新快照。
+恢复演练：
+
+```bash
+docker compose stop app
+docker compose exec app /app/deploy/restore.sh /data/backups/latest.db --force
+docker compose up -d app
+```
+
+`restore.sh` 会先报出快照的行数与 schema 版本再动手，目标库已存在时必须 `--force`；加 `--images <images-*.tgz>` 连图片目录一起还原。
 国内服务器 + 域名提供 Web 服务需 ICP 备案，未备案可先用 IP 或港服。
 
 ## 文档
 
-仓库内只保留本 README。更细的产品定位、6 周执行方案、实现偏差说明与使用手册写在 `docs/`，界面设计稿在 `design/`，两者为本地资料、未随仓库分发。
+仓库内的设计文档随 git 分发、但不进镜像（见 `.dockerignore`）：产品定位与决策在 `docs/01`，执行方案在 `docs/02`，实现偏差与诚实清单在 `docs/03`，使用手册在 `docs/04`，当前唯一的销账清单在 `docs/05-修复与收尾计划.md`。界面设计稿在 `design/`，是本地资料。
 
 ## 结构
 
@@ -63,7 +77,7 @@ Caddy 负责 HTTPS 与 SSE 不缓冲（`flush_interval -1`）。备份：`deploy
 apps/web      React 19 + Vite + react-konva + zustand（工具箱 / 编辑台 / 管理）
 apps/server   Fastify + node:sqlite + 自研持久队列 + SSE + Provider 适配层
 packages/shared  工具注册表（zod schema + 表单字段 + Agent 提示）· 类型 · 错误码
-deploy        Dockerfile / Caddyfile / 备份脚本
+deploy        Dockerfile / Caddyfile / 备份与恢复脚本
 ```
 
 工具注册表是唯一事实来源：加一个工具 = 在 `packages/shared/src/tools.ts` 写一条 `ToolDef`，
