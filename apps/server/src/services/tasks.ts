@@ -121,7 +121,7 @@ export function submitTask(input: {
 export class TaskTimeout extends Error {}
 
 /**
- * 超时不再只是"不等了"：以前 withTimeout 只 reject，runner 与它背后的 fetch/poll 会继续把
+ * 超时不再只是"不等了"：以前 withTimeout 只 reject，runner 与它背后的上游 fetch 会继续把
  * 上游调用跑完 —— 钱花了、结果丢掉、并发槽还提前释放了。现在把 signal 交下去真的掐断。
  */
 export function withAbort<T>(run: (signal: AbortSignal) => Promise<T>, ms: number): Promise<T> {

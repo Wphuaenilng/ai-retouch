@@ -83,7 +83,12 @@ export const RUNNERS: Record<string, Runner> = {
     });
     return {
       resultImageId: r.row?.id ?? null,
-      output: { imageIds: r.rows.map((x) => x.id), width: size.width, height: size.height },
+      // 报落盘的实际尺寸而非请求尺寸：上游可以不给正好那档（gpt-image 只认三档，16:9 会被吸附成 3:2）
+      output: {
+        imageIds: r.rows.map((x) => x.id),
+        width: r.row?.width ?? size.width,
+        height: r.row?.height ?? size.height,
+      },
       costYuan: r.costYuan,
       provider: r.provider,
       model: r.model,

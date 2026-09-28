@@ -1,7 +1,7 @@
 # retouch-studio · 修图台
 
 自部署的 AI 修图工作台：工具箱式单项修图 + 自然语言 Agent 对话修图 + Konva 图层画布编辑器。
-技术路线是**云端图像编辑模型 API 聚合**（火山方舟 Seedream / 阿里云百炼万相），无 GPU 依赖，邀请制小范围分享，桌面网页优先。
+技术路线是**云端图像编辑模型 API 聚合**（阿里云百炼万相 / 火山方舟 Seedream / OpenAI 兼容中转站的 gpt-image），无 GPU 依赖，邀请制小范围分享，桌面网页优先。
 
 ## 快速开始（本机开发）
 
@@ -37,14 +37,16 @@ pnpm dev                      # 起服务端 8787 + 前端 5173（Vite 代理 /a
 ```
 ARK_API_KEY=...            # 火山方舟 → Seedream 图像生成/编辑
 DASHSCOPE_API_KEY=...      # 阿里云百炼 → 通义万相
+OPENAI_IMAGES_API_KEY=...  # OpenAI 兼容端点/中转站 → gpt-image，只出文生图
 LLM_PLAN_PROVIDER=openai   # Agent 规划改用真模型（默认 mock = 规则式，离线可用）
 LLM_API_KEY=... LLM_MODEL=qwen-plus
 MODERATION=qwen-vl         # 内容审核（分享给别人之前建议开）
 ```
 
-> ⚠️ 两个上游适配器（`apps/server/src/providers/seedream.ts`、`wanx.ts`）**尚未用真实 key 跑过**，
-> 字段名与端点需按各家当前文档核对；业务层只依赖统一的 `ProviderRequest/ProviderResult`，
-> 对不上时只改适配器文件。
+> ⚠️ `providers/wanx.ts`（百炼万相 2.6）与 `providers/openai_images.ts`（中转站 gpt-image）**2026-09-28 已拿真 key 实测跑通**，
+> 实测到的协议形状、延迟与坑各自记在文件头。剩下 `providers/seedream.ts` **仍未用真 key 跑过**，字段名要按官方文档核对；
+> 业务层只依赖统一的 `ProviderRequest/ProviderResult`，对不上时只改适配器文件。`openai_images` 刻意只声明 `text2image`：gpt-image 的图生图要
+> multipart + 三档标准尺寸输入 + 透明通道遮罩，而服务端没有像素处理能力。
 
 ## 部署
 

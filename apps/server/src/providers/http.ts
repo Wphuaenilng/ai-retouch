@@ -47,13 +47,6 @@ export const postJson = <T>(
     signal,
   );
 
-export const getJson = <T>(
-  url: string,
-  headers: Record<string, string> = {},
-  timeoutMs = DEFAULT_TIMEOUT,
-  signal?: AbortSignal,
-) => call<T>(url, { method: 'GET', headers }, timeoutMs, signal);
-
 /** 上游结果图的硬上限：没有它，一个乱给的 URL 就能把整个进程 OOM 掉 */
 const MAX_RESULT_BYTES = 48 * 1024 * 1024;
 
@@ -102,29 +95,4 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     }
     signal?.addEventListener('abort', onAbort, { once: true });
   });
-}
-
-/** 轮询直到成功/失败/超时/被取消，间隔指数退避 */
-export async function poll<T>(
-  fn: () => Promise<{ done: boolean; value?: T; failed?: string }>,
-  {
-    intervalMs = 1500,
-    timeoutMs = 120_000,
-    onProgress,
-    signal,
-  }: { intervalMs?: number; timeoutMs?: number; onProgress?: (elapsed: number) => void; signal?: AbortSignal },
-): Promise<T> {
-  const start = Date.now();
-  for (;;) {
-    if (aborted(signal)) throw new UpstreamError('timeout', '轮询已取消（任务超时或服务退出）');
-    const r = await fn();
-    if (r.done) {
-      if (r.failed) throw new UpstreamError('bad_response', r.failed);
-      return r.value as T;
-    }
-    const elapsed = Date.now() - start;
-    if (elapsed > timeoutMs) throw new UpstreamError('timeout', '上游任务超时');
-    onProgress?.(Math.min(0.9, elapsed / timeoutMs));
-    await sleep(Math.min(intervalMs * (1 + elapsed / 20_000), 6000), signal);
-  }
 }

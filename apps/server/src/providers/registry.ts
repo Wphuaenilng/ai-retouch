@@ -2,12 +2,13 @@ import type { Capability, ProviderRequest, ProviderResult } from '@retouch/share
 import { config } from '../config';
 import { err } from '../lib/errors';
 import { mockProvider } from './mock';
+import { openaiImagesProvider } from './openai_images';
 import { seedreamProvider } from './seedream';
 import { wanxProvider } from './wanx';
 import { UpstreamError, type GenerateOptions, type ImageProvider } from './types';
 import { log } from '../lib/log';
 
-const ALL: ImageProvider[] = [seedreamProvider, wanxProvider, mockProvider];
+const ALL: ImageProvider[] = [seedreamProvider, wanxProvider, openaiImagesProvider, mockProvider];
 
 export function providerById(id: string): ImageProvider | undefined {
   return ALL.find((p) => p.id === id);

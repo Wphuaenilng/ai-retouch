@@ -62,11 +62,6 @@ export interface ProviderResult {
   raw?: unknown;
 }
 
-/** 异步型 provider（提交后轮询）需要实现 */
-export interface ProviderPoll {
-  providerTaskId: string;
-}
-
 /* ------------------------------------------------------------------ *
  * 工具注册表元信息
  * ------------------------------------------------------------------ */

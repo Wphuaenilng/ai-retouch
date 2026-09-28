@@ -48,6 +48,18 @@ const EnvSchema = z.object({
   WANX_EDIT_MODEL: z.string().default('wan2.6-image'),
   WANX_T2I_MODEL: z.string().default('wan2.6-t2i'),
 
+  /**
+   * OpenAI 兼容端点（官方或中转站）的 gpt-image。**只服务 text2image**，
+   * 编辑/局部重绘接不动 —— 原因见 providers/openai_images.ts 顶部。
+   * 模型名以端点 /models 列出的为准，各家叫法不统一。
+   */
+  OPENAI_IMAGES_BASE_URL: z.string().default('https://api.openai.com/v1'),
+  OPENAI_IMAGES_API_KEY: z.string().optional(),
+  OPENAI_IMAGES_MODEL: z.string().default('gpt-image-2'),
+  OPENAI_IMAGES_QUALITY: z.enum(['low', 'medium', 'high', 'auto']).default('auto'),
+  /** 元/张。上游按 token 计费，这里给的是熔断用的估价值 */
+  OPENAI_IMAGES_PRICE_YUAN: z.coerce.number().default(0.35),
+
   /** 规划模型：mock = 规则式，离线也能跑通 Agent 全链路 */
   LLM_PLAN_PROVIDER: z.enum(['mock', 'openai']).default('mock'),
   LLM_BASE_URL: z.string().default('https://dashscope.aliyuncs.com/compatible-mode/v1'),

@@ -1,6 +1,6 @@
 /**
  * 任务超时的语义：必须真的把 signal 吹掉，而不是"我不等了你继续跑"。
- * 以前的 withTimeout 只 reject，runner 背后的 fetch/poll 会跑完 —— 钱花了、结果丢了、并发槽还提前释放。
+ * 以前的 withTimeout 只 reject，runner 背后的上游 fetch 会跑完 —— 钱花了、结果丢了、并发槽还提前释放。
  */
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
