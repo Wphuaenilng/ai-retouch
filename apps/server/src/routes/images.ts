@@ -1,7 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { err } from '../lib/errors';
 import { mimeOfPath } from '../lib/storage';
-import { verifySignedImage } from '../lib/signurl';
 import { loadBuffer, purgeImages, toDTO } from '../services/images';
 import { intParam } from '../lib/parse';
 import { findDerived, findImage } from '../store/images';
@@ -9,20 +8,17 @@ import { listImages } from '../store/images';
 import { p, requireUser } from './_http';
 
 /**
- * 图片读取：登录 Cookie 或签名 URL 二选一。
- * 签名 URL 是给上游模型回拉图片用的，短期有效、只读单张。
+ * 图片读取：只认登录 Cookie。
+ * 以前这里还接受"签名 URL 免 Cookie"，但签发侧从没被任何 provider 调用过，
+ * 于是那条分支是纯粹的攻击面而没有收益 —— 已经连同 lib/signurl.ts 一起删掉。
+ * 真要接只收公网 URL 的上游时，把签发与校验一起做回来（见 docs/03 §3.2 的说明）。
  */
 export function imageRoutes(app: FastifyInstance): void {
   app.get('/api/images/:id', async (req, reply) => {
-    const q = req.query as { exp?: string; sig?: string };
+    const s = requireUser(req);
     const row = findImage(p(req).id);
     if (!row) throw err('NOT_FOUND', '图片不存在');
-
-    const signed = q.sig && q.exp ? verifySignedImage(row.id, q.exp, q.sig) : false;
-    if (!signed) {
-      const s = requireUser(req);
-      if (row.user_id !== s.sub) throw err('FORBIDDEN', '无权访问这张图');
-    }
+    if (row.user_id !== s.sub) throw err('FORBIDDEN', '无权访问这张图');
 
     const buf = await loadBuffer(row);
     const mime = mimeOfPath(row.path) || row.mime;

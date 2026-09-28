@@ -29,7 +29,11 @@ const EnvSchema = z.object({
    * X-Forwarded-For 一律不信。裸跑不接代理时设成 false。
    */
   TRUST_PROXY: z.string().default('127.0.0.1, ::1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16'),
-  /** 签名图片外链用；上游模型要求公网可访问时必须配成真实域名 */
+  /**
+   * 上游模型回拉图片时用的公网地址。**当前没有代码读它**（所有 provider 走 dataURL），
+   * 保留是因为接真上游时一定会用到，且 compose 把必填。
+   * 别把它当开关使 —— 见 05 的 D28：上一个"留着但没人读"的配置是 IMAGE_FALLBACK_TO_MOCK。
+   */
   PUBLIC_BASE_URL: z.string().default('http://127.0.0.1:8787'),
 
   /** Provider 优先级，逗号分隔；未配 key 的会被自动跳过 */

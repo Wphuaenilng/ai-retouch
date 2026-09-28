@@ -100,13 +100,9 @@ const transform: ToolDef = {
   ],
   agentHint:
     '改变画布比例、裁掉边缘、旋转、镜像时用。"裁成正方形/1:1/用于电商主图"→ cropRatio:"1:1"；"横过来/旋转90度"→ rotate:90。',
-  paramsHint:
-    '{target?:canvas|layer, layerId?, cropRatio?:1:1|4:3|3:4|16:9|9:16|free, cropRect?:{x,y,w,h}, rotate?, flipH?, flipV?} 角度为度数',
+  paramsHint: '{cropRatio?:1:1|4:3|3:4|16:9|9:16|free, rotate?, flipH?, flipV?} 角度为度数',
   input: z.object({
-    target: z.enum(['canvas', 'layer']).optional(),
-    layerId: z.string().min(1).optional(),
     cropRatio: aspect.optional(),
-    cropRect: z.object({ x: z.number(), y: z.number(), w: z.number().positive(), h: z.number().positive() }).optional(),
     rotate: z.number().min(-360).max(360).optional(),
     flipH: z.boolean().optional(),
     flipV: z.boolean().optional(),
@@ -173,15 +169,6 @@ const text2image: ToolDef = {
     F.prompt('提示词', '例：晨光里的手冲咖啡与陶壶，木桌，胶片质感，暖色调'),
     { key: 'aspect', label: '比例', kind: 'select', options: F.aspectOptions },
     {
-      key: 'resolution',
-      label: '清晰度',
-      kind: 'select',
-      options: [
-        { value: '2K', label: '2K' },
-        { value: '4K', label: '4K · 加价' },
-      ],
-    },
-    {
       key: 'count',
       label: '张数',
       kind: 'select',
@@ -193,11 +180,10 @@ const text2image: ToolDef = {
     },
   ],
   agentHint: '从文字生成全新图片，不需要输入图。一次最多 4 张候选。',
-  paramsHint: '{prompt, aspect?:1:1|4:3|3:4|16:9|9:16|free, resolution?:2K|4K, count?:1|2|4}',
+  paramsHint: '{prompt, aspect?:1:1|4:3|3:4|16:9|9:16|free, count?:1|2|4}',
   input: z.object({
     prompt: ref.prompt,
     aspect: aspect.optional(),
-    resolution: z.enum(['2K', '4K']).optional(),
     count: z.union([z.literal(1), z.literal(2), z.literal(4)]).optional(),
   }),
 };
@@ -338,28 +324,12 @@ const outpaint: ToolDef = {
   needsImage: true,
   produces: 'image',
   costYuan: 0.26,
-  fields: [
-    F.imageId,
-    { key: 'targetRatio', label: '目标比例', kind: 'select', options: F.aspectOptions },
-    {
-      key: 'expand',
-      label: '扩展方向',
-      kind: 'select',
-      options: [
-        { value: 'all', label: '四周' },
-        { value: 'left', label: '向左' },
-        { value: 'right', label: '向右' },
-        { value: 'top', label: '向上' },
-        { value: 'bottom', label: '向下' },
-      ],
-    },
-  ],
+  fields: [F.imageId, { key: 'targetRatio', label: '目标比例', kind: 'select', options: F.aspectOptions }],
   agentHint: '向外扩展画幅并补全画面，用于改比例或留出文案空间。',
-  paramsHint: '{imageId, targetRatio?:1:1|4:3|3:4|16:9|9:16, expand?:all|left|right|top|bottom}',
+  paramsHint: '{imageId, targetRatio?:1:1|4:3|3:4|16:9|9:16}',
   input: z.object({
     imageId: ref.imageId,
     targetRatio: aspect.optional(),
-    expand: z.enum(['all', 'left', 'right', 'top', 'bottom']).optional(),
   }),
 };
 

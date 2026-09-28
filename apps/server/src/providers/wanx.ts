@@ -8,7 +8,9 @@ import { UpstreamError, type ImageProvider } from './types';
  *
  * ⚠️ 未用真实 key 验证过：wan2.6 的编辑端点、input/parameters 字段名、
  * 是否接受 dataURL 都需按官方文档核对（搜"万相-图像生成与编辑2.6 API参考"）。
- * 若上游只收公网 URL，把 USE_SIGNED_URL 打开，我们会下发签名外链。
+ * 若上游只收公网 URL：签名外链那条路已经删掉了（签发侧从没被调用过，
+ * 只留下"带 sig 就能免 Cookie 读图"的攻击面）。要接就在 lib/ 里把签发
+ * 与 routes/images.ts 的校验一起做回来，并让本文件真正去用 ImageRef.url。
  */
 const T2I_PATH = '/services/aigc/text2image/image-synthesis';
 const EDIT_PATH = '/services/aigc/image2image/image-synthesis';
