@@ -287,7 +287,12 @@ export function StudioPage(): ReactElement {
       setLoadError('');
       setCurrentId(
         (cur) =>
-          cur ?? imgs.images.find((i) => i.kind === 'edit')?.id ?? imgs.images.find((i) => i.kind === 'original')?.id ?? null,
+          cur ??
+          // result 也要能当当前图：文生图没有输入图，只挑 edit/original 的话跑完舞台是空的
+          imgs.images.find((i) => i.kind === 'edit')?.id ??
+          imgs.images.find((i) => i.kind === 'original')?.id ??
+          imgs.images.find((i) => i.kind === 'result')?.id ??
+          null,
       );
     } catch (e) {
       setLoadError(errorText(e));
@@ -321,6 +326,15 @@ export function StudioPage(): ReactElement {
 
   const current = useMemo(() => images.find((i) => i.id === currentId) ?? null, [images, currentId]);
   const result = task?.resultImageId ? (images.find((i) => i.id === task.resultImageId) ?? null) : null;
+  /** 文生图一次可要 2/4 张：服务端全都存了并放进 output.imageIds，这里只是让人挑 */
+  const candidates = useMemo(() => {
+    const ids = (task?.output as { imageIds?: unknown } | undefined)?.imageIds;
+    if (!Array.isArray(ids) || ids.length < 2) return [];
+    return ids
+      .filter((x): x is string => typeof x === 'string')
+      .map((id) => images.find((i) => i.id === id))
+      .filter((x): x is ImageDTO => Boolean(x));
+  }, [task, images]);
 
   // 图片第一次离开浏览器之前先问一句（01 §7.1 的产品底线）。确认记在账号上，
   // 所以换浏览器会再问一次 —— 这是故意的，localStorage 里的"同意"跟着设备走，不算数
@@ -562,6 +576,25 @@ export function StudioPage(): ReactElement {
                   ))}
                 </div>
               )}
+            </>
+          )}
+
+          {/* 文生图的多张候选：刚跑完那一批才给选择，回看时印样条里就有 */}
+          {candidates.length > 1 && (
+            <>
+              <div className="stage-h" style={{ marginTop: 4 }}>
+                <h3 style={{ fontSize: 13 }}>候选 {candidates.length} 张</h3>
+                <span className="hint">点一张当当前图，四张都已经在库里</span>
+              </div>
+              <div className="cand-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))' }}>
+                {candidates.map((c) => (
+                  <button key={c.id} className={`thumb ${currentId === c.id ? 'on' : ''}`} onClick={() => setCurrentId(c.id)}>
+                    <span className="ph">
+                      <img src={c.url} alt="" />
+                    </span>
+                  </button>
+                ))}
+              </div>
             </>
           )}
 
