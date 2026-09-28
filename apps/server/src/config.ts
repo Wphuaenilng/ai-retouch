@@ -34,7 +34,6 @@ const EnvSchema = z.object({
 
   /** Provider 优先级，逗号分隔；未配 key 的会被自动跳过 */
   PROVIDER_PRIORITY: z.string().default('mock'),
-  IMAGE_FALLBACK_TO_MOCK: z.enum(['true', 'false']).default('true'),
 
   ARK_API_KEY: z.string().optional(),
   ARK_BASE_URL: z.string().default('https://ark.cn-beijing.volces.com/api/v3'),
