@@ -4,6 +4,12 @@ import { closeDb } from './db/index';
 import { worker } from './queue/index';
 
 async function main(): Promise<void> {
+  // 默认密钥是写死的公开字符串，带着它上生产等于任何人只要能连上就能签出自己的会话。
+  // compose 里有 :? 守卫，但 pnpm start 与直接 docker run 绕得开，所以这里也要挡一次
+  if (config.isProd && config.JWT_SECRET === 'dev-only-insecure-secret-change-me') {
+    throw new Error('NODE_ENV=production 却用着默认 JWT_SECRET —— 先 openssl rand -hex 32 换一个，否则所有登录态都可被伪造');
+  }
+
   // 开了审核却没配 key：每一次审核都会 401，成品图全被 fail-closed 挡下，
   // 表现是"所有人都出不了图"。这种配置错误要在启动时就顶回去，不要拖到运行时
   if (config.MODERATION === 'qwen-vl' && !config.LLM_API_KEY) {
