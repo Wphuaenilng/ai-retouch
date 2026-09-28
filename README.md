@@ -71,6 +71,12 @@ docker compose up -d app
 
 仓库内的设计文档随 git 分发、但不进镜像（见 `.dockerignore`）：产品定位与决策在 `docs/01`，执行方案在 `docs/02`，实现偏差与诚实清单在 `docs/03`，使用手册在 `docs/04`，当前唯一的销账清单在 `docs/05-修复与收尾计划.md`，**长期跑起来怎么运维在 `docs/07-运维手册.md`（含环境变量全表与"现象→真因"表）**。界面设计稿在 `design/`，是本地资料。
 
+## 许可
+
+MIT（见 `LICENSE`），版权 2026 Wphuaenilng。四个 `package.json` 都带 `"private": true`，那只表示**不发到 npm**，与源代码的授权范围无关 —— 想改想跑随便，别把这段版权声明删掉就行。
+
+当前状态与已知边界集中在 [CHANGELOG.md](./CHANGELOG.md)（还没有发过版本、也没打 tag）与 `docs/03` §4。
+
 ## 结构
 
 ```
