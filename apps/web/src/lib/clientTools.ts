@@ -122,7 +122,7 @@ export async function runClientTool(tool: string, params: Record<string, unknown
     art.position({ x: 0, y: 0 });
     art.scale({ x: 1, y: 1 });
     art.getLayer()?.batchDraw();
-    let url = '';
+    let url: string;
     try {
       url = art.toDataURL({
         x: 0,

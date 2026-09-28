@@ -7,7 +7,8 @@ import { untilText } from '../../lib/time';
 import { PRIVACY_LINES } from '../../lib/privacy';
 import { useEvent } from '../../lib/sse-bus';
 import { Icon } from '../../ui/Icon';
-import { Splitter, useColWidth } from '../../ui/Splitter';
+import { Splitter } from '../../ui/Splitter';
+import { useColWidth } from '../../lib/useColWidth';
 import { ConsentModal } from '../privacy/ConsentModal';
 import { ToolForm } from '../tools/ToolForm';
 

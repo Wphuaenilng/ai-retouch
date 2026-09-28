@@ -1,18 +1,5 @@
-import { useEffect, useRef, useState, type ReactElement } from 'react';
-
-const clamp = (n: number, min: number, max: number): number => Math.max(min, Math.min(max, n));
-
-/** 记住某一栏的宽度，刷新后仍在 */
-export function useColWidth(key: string, fallback: number, min: number, max: number): [number, (n: number) => void, () => void] {
-  const [w, setW] = useState<number>(() => {
-    const raw = Number(localStorage.getItem(key));
-    return raw >= min && raw <= max ? raw : fallback;
-  });
-  useEffect(() => {
-    localStorage.setItem(key, String(Math.round(w)));
-  }, [key, w]);
-  return [w, (n) => setW(clamp(n, min, max)), () => setW(fallback)];
-}
+import { useRef, type ReactElement } from 'react';
+import { clamp } from '../lib/clamp';
 
 /**
  * 竖向分隔条。invert=false 表示在右侧栏的左边（往拖窄）；invert=true 表示在左侧栏的右边（往拖宽）。

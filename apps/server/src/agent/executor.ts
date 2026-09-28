@@ -113,7 +113,7 @@ async function runPlan(planId: string, fromIdx: number, token: string): Promise<
   if (!persist({ status: 'running', steps, costYuan: totalCost })) return;
 
   for (let i = fromIdx; i < steps.length; i += 1) {
-    const step = steps[i]!;
+    const step = steps[i];
     if (step.status === 'succeeded' || step.status === 'skipped') continue;
     const fresh = findPlan(planId);
     if (!fresh || fresh.status === 'canceled' || fresh.exec_token !== token) return;

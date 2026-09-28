@@ -10,9 +10,9 @@ describe('零依赖 PNG 编解码闭环', () => {
     const buf = c.toPng();
     const info = sniffImage(buf);
     assert.ok(info);
-    assert.equal(info!.mime, 'image/png');
-    assert.equal(info!.width, 37);
-    assert.equal(info!.height, 23);
+    assert.equal(info.mime, 'image/png');
+    assert.equal(info.width, 37);
+    assert.equal(info.height, 23);
   });
 
   it('透明像素保持 alpha 通道（抠图结果要能直接当图层用）', () => {

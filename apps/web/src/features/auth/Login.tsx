@@ -24,7 +24,7 @@ export function LoginPage(): ReactElement {
       );
       // 让 App 的鉴权门重新校验会话，否则它会继续把 * 渲染成登录页
       window.dispatchEvent(new Event('retouch:authed'));
-      nav('/studio', { replace: true });
+      void nav('/studio', { replace: true });
     } catch (err) {
       setError(errorText(err));
     } finally {

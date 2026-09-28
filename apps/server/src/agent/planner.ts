@@ -165,7 +165,7 @@ async function llmPlan(input: PlanInput): Promise<PlanOutput> {
     steps: ((parsed as PlanDraft).steps ?? []).slice(0, 6).map((s, i) => ({
       id: s.id || `s${i + 1}`,
       tool: String(s.tool),
-      params: (s.params ?? {}) as Record<string, unknown>,
+      params: s.params ?? {},
       deps: Array.isArray(s.deps) ? s.deps.map(String) : [],
       reason: s.reason,
     })),

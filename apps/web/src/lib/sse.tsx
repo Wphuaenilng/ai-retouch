@@ -11,8 +11,8 @@ export function SseBridge({ enabled }: { enabled: boolean }): ReactElement | nul
     if (!enabled) return undefined;
     const es = new EventSource('/api/events', { withCredentials: true });
     es.onopen = () => emitSseOpen();
-    es.onmessage = (m) => {
-      let e: ServerEvent | null = null;
+    es.onmessage = (m: MessageEvent<string>) => {
+      let e: ServerEvent;
       try {
         e = JSON.parse(m.data) as ServerEvent;
       } catch {

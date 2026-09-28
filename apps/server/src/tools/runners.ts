@@ -254,7 +254,7 @@ export const RUNNERS: Record<string, Runner> = {
       );
     }
     const refs = await Promise.all(rows.map((r) => toProviderRef(r)));
-    const first = rows[0]!;
+    const first = rows[0];
     const r = await call(ctx, 'edit', {
       prompt: str(p.prompt) ?? '把后面的图中的元素自然合成到第一张图中，光影与透视一致',
       images: refs,

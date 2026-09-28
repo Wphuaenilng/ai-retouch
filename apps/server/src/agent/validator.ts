@@ -89,7 +89,7 @@ export function validatePlan(draft: PlanDraft, facts: PlanFacts): ValidateResult
     if (st === 1) throw err('PLAN_CYCLE', `步骤依赖成环：${[...path, n].join(' → ')}`);
     if (st === 2) return;
     state.set(n, 1);
-    for (const d of steps[n]!.deps) visit(d, [...path, n]);
+    for (const d of steps[n].deps) visit(d, [...path, n]);
     state.set(n, 2);
   };
   try {

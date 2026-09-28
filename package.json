@@ -13,7 +13,7 @@
     "db:migrate": "pnpm --filter @retouch/server db:migrate",
     "db:seed": "pnpm --filter @retouch/server db:seed",
     "typecheck": "pnpm -r --parallel typecheck",
-    "lint": "eslint . --max-warnings=58",
+    "lint": "eslint . --max-warnings=0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
     "format:check": "prettier --check \"apps/**/*.ts\" \"apps/**/*.tsx\" \"packages/**/*.ts\"",

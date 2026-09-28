@@ -11,7 +11,7 @@ export interface ImageInfo {
 
 export function sniffImage(buf: Buffer): ImageInfo | null {
   if (buf.length < 12) return null;
-  if (isPng(buf)) return { mime: 'image/png', ...pngSize(buf)! };
+  if (isPng(buf)) return { mime: 'image/png', ...pngSize(buf) };
   if (isWebp(buf)) {
     const s = webpSize(buf);
     return s ? { mime: 'image/webp', ...s } : null;

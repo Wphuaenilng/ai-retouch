@@ -2,6 +2,12 @@ import { useMemo, useState, type ReactElement } from 'react';
 import type { FieldSpec, ToolDef } from '@retouch/shared';
 import { Icon } from '../../ui/Icon';
 
+/**
+ * 表单值都是 unknown：直接 String(v) 会把对象打成 [object Object] 塞进输入框，
+ * 而不是让你发现传错了。非字符串非数字一律当没填。
+ */
+const asText = (v: unknown): string => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '');
+
 export interface ToolSubmit {
   tool: ToolDef;
   params: Record<string, unknown>;
@@ -12,7 +18,7 @@ function defaults(tool: ToolDef): Record<string, unknown> {
   for (const f of tool.fields) {
     if (f.kind === 'toggle') out[f.key] = false;
     else if (f.kind === 'slider') out[f.key] = 0;
-    else if (f.kind === 'select' && f.options?.length) out[f.key] = f.options[0]!.value;
+    else if (f.kind === 'select' && f.options?.length) out[f.key] = f.options[0].value;
     else if (f.kind === 'color') out[f.key] = '';
     else out[f.key] = '';
   }
@@ -43,10 +49,10 @@ export function ToolForm({
     if (tool.needsImage && !hasImage) list.push('先上传或选择一张图');
     if (tool.needsMask && !hasSelection) list.push('先在画布上涂抹选区');
     const promptField = tool.fields.find((f) => f.key === 'prompt');
-    if (promptField && tool.name === 'prompt_edit' && !String(values.prompt ?? '').trim()) list.push('写下要怎么改');
-    if (tool.name === 'replace_background' && !String(values.prompt ?? '').trim() && !String(values.color ?? '').trim())
+    if (promptField && tool.name === 'prompt_edit' && !asText(values.prompt).trim()) list.push('写下要怎么改');
+    if (tool.name === 'replace_background' && !asText(values.prompt).trim() && !asText(values.color).trim())
       list.push('描述新背景或选一个纯色');
-    if (tool.name === 'text2image' && !String(values.prompt ?? '').trim()) list.push('写下想画什么');
+    if (tool.name === 'text2image' && !asText(values.prompt).trim()) list.push('写下想画什么');
     return list;
   }, [tool, hasImage, hasSelection, values]);
 
@@ -90,7 +96,7 @@ export function ToolForm({
           <textarea
             className="textarea"
             placeholder={f.placeholder}
-            value={String(v ?? '')}
+            value={asText(v)}
             onChange={(e) => set(f.key, e.target.value)}
             rows={compact ? 2 : 3}
           />
@@ -165,7 +171,7 @@ export function ToolForm({
             <input
               className="input"
               placeholder="#ffffff 留空则不启用"
-              value={String(v ?? '')}
+              value={asText(v)}
               onChange={(e) => set(f.key, e.target.value)}
             />
           </div>

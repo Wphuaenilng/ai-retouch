@@ -49,24 +49,26 @@ export default tseslint.config(
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/restrict-template-expressions': 'error',
 
-      // 存量债，见任务 1.8：逐处补 catch/void 后升 error
-      '@typescript-eslint/no-floating-promises': 'warn',
-      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
-      // 表单状态是 Record<string, unknown>，String(v ?? '') 是有意为之
-      '@typescript-eslint/no-base-to-string': 'warn',
+      // 1.8 已把存量清到 0（2026-09-24），这些就是"确定会出 bug"的形状，升 error
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-base-to-string': 'error',
+      'no-useless-assignment': 'error',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/require-await': 'off',
-      'no-useless-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      'react-refresh/only-export-components': 'error',
 
+      // 故意留 warn：这两条要人判断，升 error 逼出来的会是满地 eslint-disable 而不是好代码。
+      // 但 `--max-warnings=0` 已经让任何新增等于失败，所以留 warn 不等于放松。
+      //   no-explicit-any   —— 确有不得不用 any 的边界（如第三方类型缺失）
+      //   exhaustive-deps   —— 合法省略依赖的场景真实存在（稳定回调、只在挂载时跑一次）
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
-
       'react-hooks/exhaustive-deps': 'warn',
-      'react-refresh/only-export-components': 'warn',
     },
   },
 

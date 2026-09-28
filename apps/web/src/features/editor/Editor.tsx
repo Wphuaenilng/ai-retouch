@@ -16,7 +16,8 @@ import { canvasToBlob } from '../../lib/image';
 import { useEvent, onSseOpen } from '../../lib/sse-bus';
 import { useEditor } from '../../state/editor';
 import { Icon } from '../../ui/Icon';
-import { Splitter, useColWidth } from '../../ui/Splitter';
+import { Splitter } from '../../ui/Splitter';
+import { useColWidth } from '../../lib/useColWidth';
 import { AgentPanel } from './AgentPanel';
 import { CanvasView } from './CanvasView';
 import { ToolForm } from '../tools/ToolForm';
@@ -237,7 +238,7 @@ export function EditorPage(): ReactElement {
         setDoc(document);
       } catch (e) {
         flash(errorText(e));
-        nav('/studio', { replace: true });
+        void nav('/studio', { replace: true });
       }
     })();
     void api
@@ -432,7 +433,7 @@ export function EditorPage(): ReactElement {
         full.imageId = active?.imageId ?? doc?.canvas.sourceImageId;
       }
       if (t.needsMask && !full.maskImageId) full.maskImageId = maskImageId.current;
-      setRunning({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' } as TaskDTO);
+      setRunning({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' });
       try {
         const r = await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params: full, documentId: doc?.id });
         // 换成服务端真实任务：进度此后只由 task.progress 事件驱动

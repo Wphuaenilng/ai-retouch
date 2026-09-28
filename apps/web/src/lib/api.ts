@@ -26,7 +26,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   const text = await res.text();
   type Envelope = { ok: boolean; data?: T; error?: ApiErrorShape };
-  let json: Envelope | null = null;
+  let json: Envelope | null;
   try {
     json = text ? (JSON.parse(text) as Envelope) : null;
   } catch {

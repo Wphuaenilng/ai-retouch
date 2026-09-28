@@ -114,7 +114,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   undo: () => {
     const { doc, past, future } = get();
     if (!doc || !past.length) return;
-    const prev = past[past.length - 1]!;
+    const prev = past[past.length - 1];
     set((s) => ({
       doc: { ...doc, canvas: prev },
       past: past.slice(0, -1),
@@ -127,7 +127,7 @@ export const useEditor = create<EditorState>((set, get) => ({
   redo: () => {
     const { doc, past, future } = get();
     if (!doc || !future.length) return;
-    const next = future[0]!;
+    const next = future[0];
     set((s) => ({
       doc: { ...doc, canvas: next },
       past: [...past, clone(doc.canvas)].slice(-HISTORY_CAP),
@@ -146,9 +146,9 @@ export const useEditor = create<EditorState>((set, get) => ({
 
   applyLayers: (list, keepBase = true) =>
     get().commit((c) => {
-      const created = list.map((l, i) => ({
+      const created = list.map((l, i): DocLayer => ({
         id: newId('L'),
-        kind: (i === 0 ? 'subject' : 'background') as 'subject' | 'background',
+        kind: i === 0 ? 'subject' : 'background',
         name: l.name,
         imageId: l.imageId,
         visible: true,

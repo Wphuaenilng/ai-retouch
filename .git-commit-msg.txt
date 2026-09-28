@@ -1,0 +1,25 @@
+style: lint 警告存量归零，规则升到 error（任务 1.8 收口）
+
+58 → 0，`--max-warnings=0`。42 条自动修，剩下 16 条逐处实修：
+- ToolForm 的 String(unknown) 换成类型化的 asText()：非字符串当没填，
+  而不是把 [object Object] 塞进输入框
+- 两处 nav() 显式 void；三处 let x = 初值后被覆盖的空转初始化
+- assertRefsOwned 里 Array.isArray 把 unknown 窄化成 any[] 的取值，
+  改成 .find((x): x is string => …)
+- smoke 的流 reader 补类型
+- Splitter 同时导出组件与 useColWidth（react-refresh）→ 拆成
+  lib/useColWidth.ts，共用的 clamp 再单独成 lib/clamp.ts
+
+自动修踩到一处值得记：--fix 把 editor.ts 里
+kind: (…) as 'subject'|'background' 当多余删了，而那条是有用的 ——
+三元两个字面量在普通上下文里会推成 string，删掉 typecheck 直接挂。
+正确修法不是把断言塞回去，是给 list.map((l, i): DocLayer => …) 标注返回类型。
+教训：--fix 之后立刻跑 typecheck，别信"这些可安全修复"。
+
+分级：error = 确定会出 bug 的那批（含 no-unsafe-* 全家、react-refresh）；
+no-explicit-any 与 exhaustive-deps 仍留 warn —— 这两条要人判断，
+升 error 逼出来的是满地 eslint-disable 而不是好代码，
+而棘轮已经是 0，新增一条照样红。
+
+验证：verify 全绿、eslint . 输出 0 problems、30 项冒烟重跑
+（assertRefsOwned 的取值路径这轮动过）。

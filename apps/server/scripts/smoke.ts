@@ -113,7 +113,7 @@ function openSse(): { events: string[]; stop: () => void } {
       const dec = new TextDecoder();
       let buf = '';
       for (;;) {
-        const { value, done } = await reader.read();
+        const { value, done } = await (reader as ReadableStreamDefaultReader<Uint8Array>).read();
         if (done) break;
         buf += dec.decode(value, { stream: true });
         for (;;) {
@@ -191,7 +191,7 @@ async function main(): Promise<void> {
     () => null,
     (e: Error) => e.message,
   );
-  check('邀请码一次性', typeof reuse === 'string' && /邀请码/.test(reuse as string), typeof reuse === 'string' ? reuse : '');
+  check('邀请码一次性', typeof reuse === 'string' && /邀请码/.test(reuse), typeof reuse === 'string' ? reuse : '');
 
   // 与真实客户端一致：一次上传送 original + edit + thumb 三份，删除时才看得出级联
   const fd = new FormData();
@@ -312,7 +312,7 @@ async function main(): Promise<void> {
     () => null,
     (e: Error) => e.message,
   );
-  check('未知工具被拒', typeof badTool === 'string' && /没有这个工具/.test(badTool as string));
+  check('未知工具被拒', typeof badTool === 'string' && /没有这个工具/.test(badTool));
 
   const needMask = await api('/api/tasks', {
     method: 'POST',
@@ -321,7 +321,7 @@ async function main(): Promise<void> {
     () => null,
     (e: Error) => e.message,
   );
-  check('缺选区时报稳定的业务错误', typeof needMask === 'string' && /涂抹|框选/.test(needMask as string));
+  check('缺选区时报稳定的业务错误', typeof needMask === 'string' && /涂抹|框选/.test(needMask));
 
   const impossible = await api('/api/agent/plans', {
     method: 'POST',
@@ -330,7 +330,7 @@ async function main(): Promise<void> {
     () => null,
     (e: Error) => e.message,
   );
-  check('做不到的需求被明确拒绝', typeof impossible === 'string' && /做不到/.test(impossible as string));
+  check('做不到的需求被明确拒绝', typeof impossible === 'string' && /做不到/.test(impossible));
 
   const forbidden = await api('/api/admin/overview').then(
     () => null,

@@ -41,7 +41,7 @@ class Hub {
 
   /** 返回 true 表示流已建立（调用方需 hijack reply） */
   attach(userId: string, raw: NodeJS.WritableStream, lastEventId?: string): () => void {
-    const sub: Sub = { id: this.nextId++, userId, raw: raw as Sub['raw'], alive: true };
+    const sub: Sub = { id: this.nextId++, userId, raw: raw, alive: true };
     this.subs.set(sub.id, sub);
     this.startHeartbeat();
 

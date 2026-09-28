@@ -21,7 +21,7 @@ describe('计划校验器', () => {
     const r = validatePlan({ steps: [{ id: 's1', tool: 'upscale', params: {}, deps: [] }] }, facts);
     assert.equal(r.ok, true);
     if (r.ok) {
-      assert.equal(r.steps[0]!.params.imageId, 'im_existing');
+      assert.equal(r.steps[0].params.imageId, 'im_existing');
       assert.equal(r.warnings.length, 1);
     }
   });
@@ -38,7 +38,7 @@ describe('计划校验器', () => {
       { ...facts, hasSelection: true, maskImageId: 'im_mask' },
     );
     assert.equal(r.ok, true);
-    if (r.ok) assert.equal(r.steps[0]!.params.maskImageId, 'im_mask');
+    if (r.ok) assert.equal(r.steps[0].params.maskImageId, 'im_mask');
   });
 
   it('参数越界被 zod 拒绝', () => {
@@ -77,7 +77,7 @@ describe('计划校验器', () => {
         r.steps.map((s) => s.tool),
         ['cutout', 'adjust'],
       );
-      assert.deepEqual(r.steps[1]!.deps, [0]);
+      assert.deepEqual(r.steps[1].deps, [0]);
     }
   });
 
@@ -92,7 +92,7 @@ describe('计划校验器', () => {
       facts,
     );
     assert.equal(r.ok, true);
-    if (r.ok) assert.deepEqual(r.steps[1]!.deps, []);
+    if (r.ok) assert.deepEqual(r.steps[1].deps, []);
   });
 
   it('不存在的 layerId 会被清掉并警告', () => {
@@ -102,7 +102,7 @@ describe('计划校验器', () => {
     );
     assert.equal(r.ok, true);
     if (r.ok) {
-      assert.equal(r.steps[0]!.params.layerId, undefined);
+      assert.equal(r.steps[0].params.layerId, undefined);
       assert.match(r.warnings.join(), /图层不存在/);
     }
   });

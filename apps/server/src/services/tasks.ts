@@ -56,13 +56,17 @@ export function toTaskDTO(row: TaskRow): TaskDTO {
 
 function assertRefsOwned(userId: string, toolName: string, params: Record<string, unknown>): void {
   const tool = getTool(toolName)!;
-  const imageId = params.imageId ?? (Array.isArray(params.imageIds) ? params.imageIds[0] : undefined);
+  // 只看"有没有给图"，归属校验在下面统一做；imageIds 是 unknown，不能直接当下标取
+  const firstOfList = Array.isArray(params.imageIds)
+    ? params.imageIds.find((x): x is string => typeof x === 'string' && x.length > 0)
+    : undefined;
+  const imageId = typeof params.imageId === 'string' && params.imageId ? params.imageId : firstOfList;
   if (tool.needsImage && !imageId) throw err('NEEDS_IMAGE', '这个功能需要先有一张图');
   if (tool.needsMask && !params.maskImageId) throw err('NEEDS_MASK', '请先在画布上涂抹或框选要处理的区域');
 
   const ids: string[] = [];
   for (const key of ['imageId', 'maskImageId', 'backgroundImageId']) {
-    if (typeof params[key] === 'string') ids.push(params[key] as string);
+    if (typeof params[key] === 'string') ids.push(params[key]);
   }
   if (Array.isArray(params.imageIds)) ids.push(...(params.imageIds as string[]));
   for (const id of ids) {

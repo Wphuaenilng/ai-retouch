@@ -52,18 +52,18 @@ describe('M4 验收 1：换背景 + 裁 1:1', () => {
   });
 
   it('参数被正确钳制', () => {
-    assert.equal(r.steps[0]!.params.color, '#ffffff');
-    assert.equal(r.steps[1]!.params.cropRatio, '1:1');
+    assert.equal(r.steps[0].params.color, '#ffffff');
+    assert.equal(r.steps[1].params.cropRatio, '1:1');
   });
 
   it('imageId 由当前图片事实补全，并带一句警告', () => {
-    assert.equal(r.steps[0]!.params.imageId, 'im_current');
+    assert.equal(r.steps[0].params.imageId, 'im_current');
     assert.ok(r.warnings.some((w) => w.includes('当前图片')));
   });
 
   it('依赖指向步骤 0', () => {
     assertDepsPointBack(r.steps);
-    assert.deepEqual(r.steps[1]!.deps, [0]);
+    assert.deepEqual(r.steps[1].deps, [0]);
   });
 });
 
@@ -76,8 +76,8 @@ describe('M4 验收 2：先画选区再消除', () => {
       r.steps.map((s) => s.tool),
       ['erase'],
     );
-    assert.equal(r.steps[0]!.params.maskImageId, 'im_mask');
-    assert.equal(r.steps[0]!.params.imageId, 'im_current');
+    assert.equal(r.steps[0].params.maskImageId, 'im_mask');
+    assert.equal(r.steps[0].params.imageId, 'im_current');
     assert.ok(r.warnings.some((w) => w.includes('选区')));
   });
 
@@ -113,13 +113,13 @@ describe('M4 验收 3：超分 4x 后转黑白（前后端混排）', () => {
   });
 
   it('参数分别落到 scale 与 saturation', () => {
-    assert.equal(r.steps[0]!.params.scale, 4);
-    assert.equal(r.steps[1]!.params.saturation, -1);
+    assert.equal(r.steps[0].params.scale, 4);
+    assert.equal(r.steps[1].params.saturation, -1);
   });
 
   it('依赖链在重排后仍然自洽', () => {
     assertDepsPointBack(r.steps);
-    assert.deepEqual(r.steps[1]!.deps, [0]);
+    assert.deepEqual(r.steps[1].deps, [0]);
   });
 });
 
@@ -135,7 +135,7 @@ describe('M4 验收 4：做不到的需求不产垃圾计划', () => {
 
   it('引用不存在的工具时整份计划不予通过', () => {
     const draft = mockPlan({ message: '把背景换成纯白', facts }).draft;
-    const broken = { ...draft, steps: [{ ...draft.steps[0]!, tool: 'make_coffee' }] };
+    const broken = { ...draft, steps: [{ ...draft.steps[0], tool: 'make_coffee' }] };
     const r = validatePlan(broken, facts);
     assert.equal(r.ok, false);
     if (!r.ok) assert.ok(r.errors.some((e) => /不存在的工具/.test(e)));
