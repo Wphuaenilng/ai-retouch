@@ -411,7 +411,8 @@ export function StudioPage(): ReactElement {
           <span className="chip mono">今日 {me ? `${me.quota.used}/${me.quota.limit}` : '…'}</span>
           <button className="btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
             <Icon name="i-import" className="ic sm" />
-            {uploading ? '上传中…' : '上传新图'}
+            {/* 窄屏只留图标：文案在舞台的空态与「换一张」里都有 */}
+            <span className="lbl">{uploading ? '上传中…' : '上传新图'}</span>
           </button>
           {me?.role === 'admin' && (
             <button className="btn ghost" onClick={() => void nav('/admin')}>
@@ -474,7 +475,26 @@ export function StudioPage(): ReactElement {
             <span className="hint">{tool.agentHint.split('。')[0]}。</span>
           </div>
 
-          {!current && tool.name !== 'text2image' ? (
+          {loadError && (
+            <div className="banner warn">
+              <span>读不出图片与项目：{loadError}</span>
+              <span className="sp" />
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  setLoaded(false);
+                  void refresh();
+                }}
+              >
+                <Icon name="i-retry" className="ic sm" />
+                重试
+              </button>
+            </div>
+          )}
+
+          {!loaded ? (
+            <div className="stage-empty">正在读取图片与项目…</div>
+          ) : !current && tool.name !== 'text2image' ? (
             <div className="drop" onClick={() => fileRef.current?.click()}>
               拖一张图进来，或点击选择
               <br />
@@ -501,33 +521,6 @@ export function StudioPage(): ReactElement {
             </>
           ) : (
             <>
-              {!loaded && !current && <div className="stage-empty">正在读取图片与项目…</div>}
-              {loadError && (
-                <div className="banner warn">
-                  <span>读不出图片与项目：{loadError}</span>
-                  <span className="sp" />
-                  <button
-                    className="btn ghost"
-                    onClick={() => {
-                      setLoaded(false);
-                      void refresh();
-                    }}
-                  >
-                    <Icon name="i-retry" className="ic sm" />
-                    重试
-                  </button>
-                </div>
-              )}
-              {loaded && !images.length && !current && (
-                <div className="stage-empty">
-                  <div>还没有图片。上传一张就开始修图。</div>
-                  <button className="btn primary" onClick={() => fileRef.current?.click()}>
-                    <Icon name="i-import" className="ic sm" />
-                    上传新图
-                  </button>
-                  <div className="mono">本地功能即时不计次 · AI 功能每天 {me?.quota.limit ?? 30} 次</div>
-                </div>
-              )}
               {current && <ImageStage img={current} />}
               {busy && (
                 <div className="result-card">

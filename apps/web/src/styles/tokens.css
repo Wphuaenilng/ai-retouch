@@ -38,7 +38,13 @@
   --ease-dev: cubic-bezier(0.22, 0.61, 0.36, 1);
   --dur-dev: 600ms;
 
-  --topbar-h: 48px;
+  --topbar-h: calc(48px + var(--safe-t));
+  /* 刘海与 home indicator：index.html 已经 viewport-fit=cover，
+     不接这四个变量就等于让顶栏钻进刘海、底栏压进小白条 */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
   --rail-w: 64px;
   --side-w: 340px;
   --strip-h: 96px;
@@ -318,7 +324,7 @@ input[type='color'] {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: var(--sp-3);
-  padding: 0 14px;
+  padding: var(--safe-t) calc(14px + var(--safe-r)) 0 calc(14px + var(--safe-l));
   background: linear-gradient(#1b1c20, #161719);
   border-bottom: 1px solid var(--line);
 }
@@ -537,7 +543,9 @@ input[type='color'] {
 
 /* 胶片条 */
 .strip {
-  height: var(--strip-h);
+  /* 底部留出 home indicator 的高度：小条本身跟着长高，缩略图不会被顶到小白条下面 */
+  height: calc(var(--strip-h) + var(--safe-b));
+  padding-bottom: var(--safe-b);
   flex: none;
   border-top: 1px solid var(--line);
   background: #101114;
@@ -795,10 +803,12 @@ input[type='color'] {
   height: 100%;
   display: grid;
   place-items: center;
-  padding: var(--sp-6);
+  padding: max(var(--sp-6), env(safe-area-inset-top, 0px) + var(--sp-4)) calc(var(--sp-6) + env(safe-area-inset-right, 0px))
+    max(var(--sp-6), env(safe-area-inset-bottom, 0px) + var(--sp-4)) calc(var(--sp-6) + env(safe-area-inset-left, 0px));
 }
 .login .card {
-  width: 380px;
+  /* 以前写死 380px：360 宽的手机上整页横向溢出 44px，登录框被切掉一条 */
+  width: min(380px, 100%);
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1453,5 +1463,69 @@ input[type='color'] {
   }
   .viewer {
     min-height: 280px;
+  }
+}
+
+/* 手机档（360 / 390 / 430）：减法优先 —— 排不开的东西去掉，而不是缩小到读不了。
+   暗色小字在这一档一律提亮提大，见 --ink-3 覆盖 */
+@media (max-width: 639px) {
+  :root {
+    /* 小屏手持距离更远，同一个灰度在这儿会开始发闷 */
+    --ink-3: #a6a8ae;
+    --topbar-h: calc(44px + var(--safe-t));
+  }
+  /* 顶栏一行放不下 6 个东西：次要计数退场，主操作只留图标 */
+  .topbar .save {
+    display: none;
+  }
+  .topbar .btn .lbl {
+    display: none;
+  }
+  .topbar {
+    gap: var(--sp-2);
+  }
+  /* 侧栏抽屉在这一档直接铺满，留 29px 的画布没有意义 */
+  .side {
+    width: 100%;
+    padding-left: calc(var(--sp-3) + var(--safe-l));
+    padding-right: calc(var(--sp-3) + var(--safe-r));
+  }
+  .stage {
+    padding: var(--sp-3) calc(var(--sp-3) + var(--safe-r)) calc(var(--sp-3) + var(--safe-b)) calc(var(--sp-3) + var(--safe-l));
+    gap: 10px;
+  }
+  /* 触屏命中区：44px 是底线，比美观优先 */
+  .btn {
+    min-height: 40px;
+  }
+  .tl-item {
+    height: 60px;
+  }
+  .input,
+  select.input {
+    min-height: 40px;
+    font-size: 14px; /* <16px 在 iOS 上会触发自动缩放 */
+  }
+  .viewer {
+    min-height: 220px;
+  }
+  .strip {
+    --strip-h: 84px;
+  }
+  .modal {
+    max-height: calc(100vh - var(--topbar-h) - var(--safe-b));
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+  }
+  .modal-scrim {
+    place-items: end center;
+    padding: var(--sp-3) var(--sp-3) calc(var(--sp-3) + var(--safe-b));
+  }
+}
+@media (max-width: 860px) and (orientation: landscape) {
+  .strip {
+    --strip-h: 72px;
+  }
+  .viewer {
+    min-height: calc(100vh - var(--topbar-h) - 72px - 24px);
   }
 }
