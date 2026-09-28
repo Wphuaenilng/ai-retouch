@@ -566,16 +566,12 @@ export function EditorPage(): ReactElement {
 
       {dockTool && (
         <div
+          className="popover"
           style={{
-            position: 'absolute',
             right: 'calc(var(--side-w) + 24px)',
             bottom: 'calc(var(--strip-h) + 20px)',
             width: 320,
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 12,
             padding: 16,
-            boxShadow: '0 24px 70px rgba(0,0,0,.55)',
             zIndex: 40,
           }}
         >

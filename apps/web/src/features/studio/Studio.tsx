@@ -42,20 +42,7 @@ function AccountMenu({ username }: { username: string }): ReactElement {
         账号
       </button>
       {open && (
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 'calc(100% + 8px)',
-            width: 250,
-            padding: 14,
-            background: 'var(--panel)',
-            border: '1px solid var(--line)',
-            borderRadius: 12,
-            boxShadow: '0 24px 70px rgba(0,0,0,.55)',
-            zIndex: 50,
-          }}
-        >
+        <div className="popover" style={{ right: 0, top: 'calc(100% + 8px)', width: 250, padding: 14 }}>
           <div className="hint mono" style={{ marginBottom: 8 }}>
             {username}
           </div>
@@ -275,6 +262,8 @@ export function StudioPage(): ReactElement {
   const [task, setTask] = useState<TaskDTO | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [loaded, setLoaded] = useState(false);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tlW, setTlW, resetTlW] = useColWidth('studio.toolListW', 240, 180, 420);
@@ -286,16 +275,25 @@ export function StudioPage(): ReactElement {
   }, []);
 
   const refresh = useCallback(async (): Promise<void> => {
-    const [imgs, ds] = await Promise.all([
-      api.get<{ images: ImageDTO[] }>('/api/images?limit=24').catch(() => ({ images: [] as ImageDTO[] })),
-      api.get<{ documents: DocumentDTO[] }>('/api/documents').catch(() => ({ documents: [] as DocumentDTO[] })),
-    ]);
-    setImages(imgs.images);
-    setDocs(ds.documents);
-    setCurrentId(
-      (cur) =>
-        cur ?? imgs.images.find((i) => i.kind === 'edit')?.id ?? imgs.images.find((i) => i.kind === 'original')?.id ?? null,
-    );
+    // 失败和"库里真的没有图"要分得开：以前一律 catch 成空数组，
+    // 后端挂了用户看到的是"你还没有图片"
+    try {
+      const [imgs, ds] = await Promise.all([
+        api.get<{ images: ImageDTO[] }>('/api/images?limit=24'),
+        api.get<{ documents: DocumentDTO[] }>('/api/documents'),
+      ]);
+      setImages(imgs.images);
+      setDocs(ds.documents);
+      setLoadError('');
+      setCurrentId(
+        (cur) =>
+          cur ?? imgs.images.find((i) => i.kind === 'edit')?.id ?? imgs.images.find((i) => i.kind === 'original')?.id ?? null,
+      );
+    } catch (e) {
+      setLoadError(errorText(e));
+    } finally {
+      setLoaded(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -503,6 +501,33 @@ export function StudioPage(): ReactElement {
             </>
           ) : (
             <>
+              {!loaded && !current && <div className="stage-empty">正在读取图片与项目…</div>}
+              {loadError && (
+                <div className="banner warn">
+                  <span>读不出图片与项目：{loadError}</span>
+                  <span className="sp" />
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      setLoaded(false);
+                      void refresh();
+                    }}
+                  >
+                    <Icon name="i-retry" className="ic sm" />
+                    重试
+                  </button>
+                </div>
+              )}
+              {loaded && !images.length && !current && (
+                <div className="stage-empty">
+                  <div>还没有图片。上传一张就开始修图。</div>
+                  <button className="btn primary" onClick={() => fileRef.current?.click()}>
+                    <Icon name="i-import" className="ic sm" />
+                    上传新图
+                  </button>
+                  <div className="mono">本地功能即时不计次 · AI 功能每天 {me?.quota.limit ?? 30} 次</div>
+                </div>
+              )}
               {current && <ImageStage img={current} />}
               {busy && (
                 <div className="result-card">

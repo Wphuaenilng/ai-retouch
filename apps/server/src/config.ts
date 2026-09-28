@@ -87,6 +87,15 @@ if (!parsed.success) {
 
 const raw = parsed.data;
 
+/**
+ * 测试进程绝不允许碰默认路径 —— 那就是开发机上的 data/retouch.db，真实数据。
+ * 踩过一次：某个测试文件只 import 了服务层，就悄悄打开了活库，跑并发时报
+ * "database is locked"，更糟的情况是把断言写进真数据里。
+ */
+if (raw.NODE_ENV === 'test' && (!process.env.SQLITE_PATH || !process.env.DATA_DIR)) {
+  throw new Error('测试必须显式设 SQLITE_PATH 与 DATA_DIR（指向临时目录），否则会和开发机的真实库打架');
+}
+
 export const config = {
   ...raw,
   DATA_DIR: abs(raw.DATA_DIR),

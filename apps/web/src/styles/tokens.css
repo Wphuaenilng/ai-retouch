@@ -16,6 +16,8 @@
   --ink-3: #92949a;
   /* 状态三色，低饱和；红只做状态 */
   --red: #c8503c;
+  /* 暗底小字号的错误色：--red 在这个尺寸上偏闷，读起来像装饰不像报警 */
+  --red-ink: #d06a56;
   --green: #7fa98b;
   --amber: #c79a54;
 
@@ -436,6 +438,24 @@ input[type='color'] {
   font-size: 13px;
   text-align: center;
   line-height: 2;
+}
+
+/* 舞台三态（读取中 / 还没有图 / 读不出来）。空态要给出下一步，不只是"这里没有东西" */
+.stage-empty {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  padding: 34px 20px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-lg);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.9;
+  text-align: center;
+}
+.stage-empty .mono {
+  color: var(--ink-3);
+  font-size: 11.5px;
 }
 
 /* 可拖宽的分栏分隔条：静态线由相邻栏的 border 提供，这里只是加宽的命中区 */
@@ -1283,6 +1303,16 @@ input[type='color'] {
   font-size: 13px;
   line-height: 1.6;
   resize: none;
+}
+
+/* 浮层面板：账号菜单与工具抽屉是同一套表面，只有定位和宽度不同 */
+.popover {
+  position: absolute;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  z-index: 50;
 }
 
 /* 侧栏里的常驻版告知：默认收成一行，展开才给全文 */

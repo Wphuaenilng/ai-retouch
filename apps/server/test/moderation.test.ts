@@ -13,10 +13,14 @@ import type { ImageRow } from '../src/store/images';
 
 const dir = mkdtempSync(join(tmpdir(), 'rt-mod-'));
 process.env.NODE_ENV = 'test';
+// 审核服务 import 链会一路摸到 db/index —— 不给临时路径就会去开开发机的真实库
+process.env.SQLITE_PATH = join(dir, 'mod.db');
+process.env.DATA_DIR = dir;
 process.env.MODERATION = 'qwen-vl';
 // config 只在 import 时读一次 env，所以自定义词表要在动态 import 之前放好
 process.env.MODERATION_BLOCK_WORDS = '内部测试词';
 
+const { closeDb } = await import('../src/db/index');
 const { checkPrompt, checkImage, assertImageSafe } = await import('../src/services/moderation');
 
 const file = join(dir, 'x.png');
@@ -51,6 +55,8 @@ async function code(fn: () => Promise<unknown>): Promise<string | undefined> {
 
 after(() => {
   restore();
+  // 库里还留着句柄时 rmSync 在 Windows 上会 EBUSY
+  closeDb();
   rmSync(dir, { recursive: true, force: true });
 });
 

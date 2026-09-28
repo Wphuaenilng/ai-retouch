@@ -365,7 +365,7 @@ export function CanvasView({
   const handleColors = useMemo(() => {
     const css = typeof getComputedStyle === 'function' ? getComputedStyle(document.documentElement) : null;
     const v = (name: string, fallback: string): string => css?.getPropertyValue(name).trim() || fallback;
-    return { border: v('--line', '#5A5F66'), anchor: v('--red', '#B9432A') };
+    return { border: v('--line', '#5A5F66'), anchor: v('--red', '#B9432A'), fill: v('--panel', '#17181b') };
   }, []);
 
   useEffect(() => {
@@ -588,7 +588,7 @@ export function CanvasView({
               anchorCornerRadius={2}
               borderStroke={handleColors.border}
               anchorStroke={handleColors.anchor}
-              anchorFill="#141416"
+              anchorFill={handleColors.fill}
               onMouseDown={() => {
                 // 手柄按下时取消可能已经启动的平移（DOM pointerdown 比 Konva 的 mousedown 早到）
                 transforming.current = true;

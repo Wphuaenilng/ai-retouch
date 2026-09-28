@@ -178,7 +178,7 @@ export function AgentPanel({ documentId }: { documentId: string }): ReactElement
               {m.text}
             </div>
           ) : (
-            <div className="msg-a" key={i} style={m.role === 'error' ? { color: '#d06a56' } : undefined}>
+            <div className="msg-a" key={i} style={m.role === 'error' ? { color: 'var(--red-ink)' } : undefined}>
               {m.text}
             </div>
           ),
