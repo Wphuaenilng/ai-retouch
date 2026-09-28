@@ -19,6 +19,22 @@ function AccountMenu({ username }: { username: string }): ReactElement {
   const [nxt, setNxt] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [delName, setDelName] = useState('');
+  const [delPass, setDelPass] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const destroy = async (): Promise<void> => {
+    setDeleting(true);
+    setMsg('');
+    try {
+      await api.del<{ deleted: boolean; files: number }>('/api/me', { username: delName, password: delPass });
+      setMsg('账号已注销，正在回到登录页…');
+      setTimeout(() => void nav('/login'), 900);
+    } catch (e) {
+      setMsg(errorText(e));
+      setDeleting(false);
+    }
+  };
 
   const submit = async (): Promise<void> => {
     setBusy(true);
@@ -77,6 +93,35 @@ function AccountMenu({ username }: { username: string }): ReactElement {
           <div className="hint" style={{ marginTop: 8 }}>
             改密后所有设备都要重新登录。
           </div>
+          <details style={{ marginTop: 12 }}>
+            <summary className="hint" style={{ cursor: 'pointer', color: 'var(--red-ink)' }}>
+              注销账号（不可撤销）
+            </summary>
+            <div className="hint" style={{ fontSize: 11.5, lineHeight: 1.8, margin: '8px 0' }}>
+              图片、项目、任务与配额记录会从服务器和磁盘一起删掉；别人拿你的邀请码注册的账号不受影响。
+            </div>
+            <div className="field">
+              <label>再输一次用户名</label>
+              <input className="input" value={delName} onChange={(e) => setDelName(e.target.value)} autoComplete="off" />
+            </div>
+            <div className="field">
+              <label>密码</label>
+              <input
+                className="input"
+                type="password"
+                value={delPass}
+                onChange={(e) => setDelPass(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <button
+              className="btn danger"
+              disabled={deleting || delName !== username || delPass.length < 8}
+              onClick={() => void destroy()}
+            >
+              {deleting ? '删除中…' : '永久删除这个账号'}
+            </button>
+          </details>
         </div>
       )}
     </div>
@@ -392,7 +437,7 @@ export function StudioPage(): ReactElement {
     }
     if (t.needsImage && !params.imageId) params.imageId = current?.id;
     if (t.needsMask) return void nav(`/editor/${await openDoc(current?.id ?? '')}`);
-    setTask({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' } as TaskDTO);
+    setTask({ id: '', tool: t.name, title: t.title, status: 'queued', progress: 0, costYuan: 0, createdAt: '' });
     try {
       const r = await api.post<{ task: TaskDTO }>('/api/tasks', { tool: t.name, params });
       // 换成服务端真实任务：进度此后只由 task.progress 事件驱动

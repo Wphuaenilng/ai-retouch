@@ -31,6 +31,12 @@ export async function imageExists(path: string): Promise<boolean> {
   }
 }
 
+/** 某个用户的全部图片目录：注销时整目录删，比逐行 unlink 更能兜住孤儿文件 */
+export function userImageDir(userId: string): string {
+  if (!SAFE.test(userId)) throw new Error('unsafe image path segment');
+  return join(IMAGE_DIR, userId);
+}
+
 /** 删文件。行已经要删了，文件不在就等于删成功，所以 ENOENT 直接吞 */
 export async function removeImage(path: string): Promise<void> {
   await rm(path, { force: true });

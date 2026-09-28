@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { config } from '../config';
 import { clearSessionCookie, serializeSessionCookie, SESSION_COOKIE } from '../lib/cookies';
 import { err } from '../lib/errors';
+import { strParam } from '../lib/parse';
+import { deleteAccount } from '../services/accounts';
 import { changePassword, login, logout, meFromClaims, register } from '../services/auth';
 import { setConsent } from '../store/users';
 import { limit, requireUser } from './_http';
@@ -66,6 +68,19 @@ export function authRoutes(app: FastifyInstance): void {
   app.post('/api/consent', async (req) => {
     const s = requireUser(req);
     return { ok: true, data: { consentAt: setConsent(s.sub) } };
+  });
+
+  // 注销账号：不可撤销，所以要再报一次密码；成功后会话立刻作废
+  app.delete('/api/me', async (req, reply) => {
+    const s = requireUser(req);
+    limit(req, 'delete-account', 3, 300_000);
+    const body = (req.body ?? {}) as { username?: unknown; password?: unknown };
+    const username = strParam(body.username, { name: 'username', max: 24 });
+    const password = strParam(body.password, { name: 'password', max: 128 });
+    if (!username || !password) throw err('BAD_REQUEST', '注销要填用户名与密码确认');
+    const r = await deleteAccount(s.sub, username, password);
+    reply.header('set-cookie', clearSessionCookie());
+    return { ok: true, data: { deleted: true, files: r.files } };
   });
 
   app.get('/api/config', async () => ({
