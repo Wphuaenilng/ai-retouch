@@ -500,11 +500,26 @@ export function visibleTools(): ToolDef[] {
   return TOOLS.filter((t) => t.priority <= 1);
 }
 
-/** 喂给规划模型的工具清单文本（比 JSON Schema 省 token，也更不容易被模型改写） */
-export function toolSpecForPlanner(): string {
+/**
+ * 喂给规划模型的工具清单文本（比 JSON Schema 省 token，也更不容易被模型改写）。
+ *
+ * availableCaps 不是可选的装饰：像 portrait / segment 这种只有一两家上游支持的能力，
+ * 一旦当前配置的 provider 里没有它，Agent 规划出来就必然失败（还先扣了人的期待）。
+ * 传了就按它过滤 —— 让模型压根看不见，比让它选了再报错好。
+ * 不传 = 不做能力过滤（离线跑规则式规划器时用它）。
+ */
+export function toolSpecForPlanner(availableCaps?: readonly string[]): string {
   return TOOLS.filter((t) => t.priority <= 1)
+    .filter((t) => !availableCaps || !t.capability || availableCaps.includes(t.capability))
     .map((t) => `- ${t.name}（${t.title}｜${t.executor}｜约 ¥${t.costYuan}）\n  何时用：${t.agentHint}\n  参数：${t.paramsHint}`)
     .join('\n');
+}
+
+/** 某个工具的能力当前是否可服务（本地工具与无能力工具永远算可服务） */
+export function toolServableBy(name: string, availableCaps: readonly string[]): boolean {
+  const t = MAP.get(name);
+  if (!t) return false;
+  return !t.capability || availableCaps.includes(t.capability);
 }
 
 /** 校验并钳制参数；返回 { ok, value | issues } */

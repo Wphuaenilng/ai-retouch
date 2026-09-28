@@ -1,4 +1,5 @@
 import { toolSpecForPlanner, type PlanDraft } from '@retouch/shared';
+import { availableCapabilities } from '../providers/registry';
 import { config } from '../config';
 import { err } from '../lib/errors';
 import type { PlanFacts } from './validator';
@@ -109,9 +110,16 @@ export function mockPlan(input: PlanInput): PlanOutput {
   return { planner: 'mock-rules', draft: { summary: `拆成 ${steps.length} 步执行`, steps } };
 }
 
-const SYSTEM = `你是修图工作流的编排器，只输出 JSON，不输出解释文字。
+/**
+ * 系统提示按"当前能服务的能力"生成。
+ * 刻意不做成模块级常量：常量会在 import 时就把工具表焊死，
+ * 而 PROVIDER_PRIORITY 是运行时配置 —— 换一个配置就得重启进程才能改口径，
+ * 更糟的是它会让"只配了 Seedream 的人"看到 portrait/segment 并挑了必败的那条。
+ */
+function systemPrompt(availableCaps: readonly string[]): string {
+  return `你是修图工作流的编排器，只输出 JSON，不输出解释文字。
 可用工具（tool 字段必须严格取自这里）：
-${toolSpecForPlanner()}
+${toolSpecForPlanner(availableCaps)}
 
 输出格式：{"summary":"一句话说明","steps":[{"id":"s1","tool":"工具名","params":{...},"deps":[] , "reason":"为什么需要这步"}]}
 硬性规则：
@@ -120,6 +128,7 @@ ${toolSpecForPlanner()}
 3. 换背景只用 replace_background 一步完成，不要拆成 cutout + 编辑。
 4. 用户说的"再亮一点/暗一点"这类相对指令，用 adjust 的小幅参数（±0.1~0.2）表达。
 5. 没有合适工具时输出 {"steps":[]}，不要硬凑。`;
+}
 
 async function llmPlan(input: PlanInput): Promise<PlanOutput> {
   const facts = [
@@ -130,7 +139,7 @@ async function llmPlan(input: PlanInput): Promise<PlanOutput> {
   ].join('，');
 
   const messages = [
-    { role: 'system', content: SYSTEM },
+    { role: 'system', content: systemPrompt(availableCapabilities()) },
     { role: 'user', content: `需求：${input.message}\n画布事实：${facts}` },
   ];
   if (input.feedback?.length) {

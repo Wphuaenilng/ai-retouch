@@ -31,6 +31,18 @@ export function chainFor(cap: Capability): ImageProvider[] {
 }
 
 /**
+ * 当前配置下**真的能服务**的能力集合。规划器与计划校验器都拿它过滤，
+ * 因为"模型选了一个没人做得到的工具"应该在它看得见之前就被排除，
+ * 而不是等任务跑起来才报"没有可用模型"。
+ * 能力全集从各家 provider 声明里取，不另写一份清单，免得两边漂开。
+ */
+export function availableCapabilities(): string[] {
+  const universe = new Set<Capability>();
+  for (const p of ALL) for (const c of p.capabilities) universe.add(c);
+  return [...universe].filter((c) => chainFor(c).length > 0);
+}
+
+/**
  * 依次尝试，失败降级；全部失败才抛错。
  * 不会偷偷回退到 mock —— mock 必须显式写在 PROVIDER_PRIORITY 里，
  * 否则用户会误以为拿到的是真实模型效果。

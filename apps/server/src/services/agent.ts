@@ -3,6 +3,7 @@ import { err } from '../lib/errors';
 import { log } from '../lib/log';
 import { hub } from '../lib/sse';
 import { plan } from '../agent/planner';
+import { availableCapabilities } from '../providers/registry';
 import { validatePlan } from '../agent/validator';
 import { executePlan, reportClientReceipt, toPlanDTO } from '../agent/executor';
 import { insertPlan, listPlans, planSteps, savePlan, type PlanRow, type StepRecord, findPlan } from '../store/plans';
@@ -18,12 +19,15 @@ export async function createPlan(input: { userId: string; documentId: string; me
   if (!message) throw err('BAD_REQUEST', '先说说你想怎么改');
 
   const first = await plan({ message, facts });
-  let result = validatePlan(first.draft, facts);
+  // 能力集合只算一次：规划器与校验器必须看同一份，
+  // 否则会出现"提示里没给模型看、校验时却因此挨判"或反过来
+  const caps = availableCapabilities();
+  let result = validatePlan(first.draft, facts, caps);
 
   // 校验失败时，把原因回喂给模型再试一次（规则式规划器没有可修正的空间，直接报错）
   if (!result.ok && first.planner.startsWith('llm')) {
     const retry = await plan({ message, facts, feedback: result.errors });
-    result = validatePlan(retry.draft, facts);
+    result = validatePlan(retry.draft, facts, caps);
   }
   if (!result.ok) throw err('PLAN_EMPTY', result.errors.join('；'), result.errors);
 

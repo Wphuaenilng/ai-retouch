@@ -1,4 +1,4 @@
-import { getTool, validateToolParams, type PlanDraft, type ValidatedStep } from '@retouch/shared';
+import { getTool, toolServableBy, validateToolParams, type PlanDraft, type ValidatedStep } from '@retouch/shared';
 import { AppError, err } from '../lib/errors';
 
 export interface PlanFacts {
@@ -17,13 +17,19 @@ export type ValidateResult = { ok: true; steps: ValidatedStep[]; warnings: strin
  * 计划校验器 —— 纯代码，不碰模型也不碰数据库，是整个 Agent 里唯一可完全单测的部分。
  * 顺序：工具白名单 → 参数 schema → 事实补全（imageId/mask）→ 依赖清洗 → 环检测 → 拓扑排序
  */
-export function validatePlan(draft: PlanDraft, facts: PlanFacts): ValidateResult {
+export function validatePlan(draft: PlanDraft, facts: PlanFacts, availableCaps?: readonly string[]): ValidateResult {
   const errors: string[] = [];
   const warnings: string[] = [];
 
   const kept = draft.steps.filter((s) => {
     if (!getTool(s.tool)) {
       errors.push(`不存在的工具：${s.tool}`);
+      return false;
+    }
+    // 当前 provider 配置做不到的能力，在这一步就丢掉并说清楚。
+    // 等到任务跑起来才报"没有可用模型"，人已经等了十几秒还付了预扣
+    if (availableCaps && !toolServableBy(s.tool, availableCaps)) {
+      warnings.push(`${getTool(s.tool)!.title}：当前配置的上游不支持这个能力，已跳过这一步`);
       return false;
     }
     return true;
