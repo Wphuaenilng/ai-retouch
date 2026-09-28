@@ -9,6 +9,7 @@ import { StudioPage } from './features/studio/Studio';
 // 编辑台把 konva/react-konva 整块拖进来（约 500KB），登录页与工具箱没必要为它买单
 const EditorPage = lazy(() => import('./features/editor/Editor').then((m) => ({ default: m.EditorPage })));
 const AdminPage = lazy(() => import('./features/admin/Admin').then((m) => ({ default: m.AdminPage })));
+const HistoryPage = lazy(() => import('./features/history/History').then((m) => ({ default: m.HistoryPage })));
 
 const Loading = (): ReactElement => (
   <div className="shell">
@@ -70,6 +71,7 @@ export function App(): ReactElement {
           <Route path="/login" element={<Navigate to="/studio" replace />} />
           <Route path="/studio" element={<StudioPage />} />
           <Route path="/editor/:id" element={<EditorPage />} />
+          <Route path="/history" element={<HistoryPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<Navigate to="/studio" replace />} />
         </Routes>

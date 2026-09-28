@@ -423,6 +423,10 @@ export function StudioPage(): ReactElement {
         <div className="c" />
         <div className="r">
           <span className="chip mono">今日 {me ? `${me.quota.used}/${me.quota.limit}` : '…'}</span>
+          {/* 只放图标：顶栏在 360 档已经很挤，"记录"两个字省得掉 */}
+          <button className="btn ghost" title="历史记录" aria-label="历史记录" onClick={() => void nav('/history')}>
+            <Icon name="i-clock" className="ic sm" />
+          </button>
           <button className="btn" onClick={() => fileRef.current?.click()} disabled={uploading}>
             <Icon name="i-import" className="ic sm" />
             {/* 窄屏只留图标：文案在舞台的空态与「换一张」里都有 */}
