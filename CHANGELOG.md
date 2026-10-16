@@ -27,6 +27,8 @@
 ### 改变
 
 - **万相适配器按 2.6 协议重写，并首次拿真 key 实测**（2026-09-28）：改走**同步** `/services/aigc/multimodal-generation/generation`（`input.messages[].content[]` 带 `{text}`/`{image}`，图支持 dataURL；结果取 `output.choices[].message.content[].image`），不再发 `X-DashScope-Async` 也不轮询 —— 老写法（`text2image/image-synthesis` + `input.prompt`）对 `wan2.6-*` 直接 400 `url error`。**能力按实测收口**：`wanx` 只声明 `text2image` 与 `edit`，遮罩会被上游拒、超分与抠图是别的模型，所以 `inpaint/outpaint/upscale/segment` 不再挂它名下（没配别的 key 时这些工具会明确报"没有可用的模型"，而不是静默出占位图）。顺带删掉因此没人用的 `poll` / `getJson` / `ProviderPoll`。
+- **CI 第一次真跑就拦下了一件本地永远看不出来的事**：`apps/web` 的 test 脚本是 `tsx --test`，而 `tsx` 只声明在 `apps/server` 的依赖里 —— `pnpm install --frozen-lockfile` 给 web 链不出这个命令，于是**前端那 28 例在 CI 上从来没被执行过**（run #1 死在第 9 步 `pnpm test`，前 8 步全绿）。本地之所以看不出来：`apps/web/node_modules/.bin/tsx` 是安装漂移留下的。修法是把依赖补到它该在的地方（`apps/web/package.json` + lockfile 各一行），验证按 CI 的方式在临时目录里干净装一遍再跑。登记为 05 的 D39。
+- **§2 缺陷表修好了一处会把表格劈成两半的空行**（D31 与 D32 之间），这会让 D32-D39 在渲染时脱离表头。
 - **文生图任务与历史里报的是落盘尺寸，不是请求尺寸**：万相会把 `1100*900` 吸附成 `1088*896`、gpt-image 只认三档，请求里那一对从来不可信。
 - **`ARK_IMAGE_MODEL` 的默认值修掉了**：原来写的 `doubao-seedream-4-5-250828` 在火山方舟上**不存在**（09-28 拿真 key 列过模型），改成在架的 `doubao-seedream-4-0-250828`，在架清单记进 `config.ts` 与 07。同一轮实测：这把 key 能鉴权，但账号未开通任何 Seedream 图像模型（五个在架版本全 `404 ModelNotOpen`），所以 4.1 还差控制台那一下点击。
 - **内容审核故障分档**：审核服务不可用时，**成品图拒绝出图**（要发给别人看的那张宁停不错发），**上传放行**；错误码分开成 `MODERATION_UNAVAILABLE`。开 `qwen-vl` 却没配 key 时直接拒绝启动。
