@@ -322,6 +322,7 @@ export function StudioPage(): ReactElement {
   const [loaded, setLoaded] = useState(false);
   /** 当前配置真做得到的能力；null = /api/config 还没回来（或老版本没这个字段），此时一律放行 */
   const [caps, setCaps] = useState<string[] | null>(null);
+  const [maxMb, setMaxMb] = useState(20);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tlW, setTlW, resetTlW] = useColWidth('studio.toolListW', 240, 180, 420);
@@ -364,10 +365,14 @@ export function StudioPage(): ReactElement {
       .get<{ me: MeDTO }>('/api/me')
       .then((r) => setMe(r.me))
       .catch(() => undefined);
-    // 这是 /api/config 的第一个调用方：工具箱得知道上游当前做得到哪几件事
+    // 这是 /api/config 的第一个调用方：工具箱得知道上游当前做得到哪几件事，
+    // 以及上传上限是多少（以前这句文案把 20MB 写死在前端，改配置界面还在说 20）
     void api
-      .get<{ capabilities?: string[] }>('/api/config')
-      .then((r) => setCaps(Array.isArray(r.capabilities) ? r.capabilities : null))
+      .get<{ capabilities?: string[]; maxUploadMb?: number }>('/api/config')
+      .then((r) => {
+        setCaps(Array.isArray(r.capabilities) ? r.capabilities : null);
+        if (typeof r.maxUploadMb === 'number') setMaxMb(r.maxUploadMb);
+      })
       .catch(() => undefined);
     void refresh();
   }, [refresh]);
@@ -602,7 +607,7 @@ export function StudioPage(): ReactElement {
               拖一张图进来，或点击选择
               <br />
               <span className="mono" style={{ fontSize: 12 }}>
-                PNG / JPEG / WebP · 最大 {me ? '20' : '20'}MB · 浏览器内压缩后上传
+                PNG / JPEG / WebP · 最大 {maxMb}MB · 浏览器内压缩后上传
               </span>
             </div>
           ) : result && current ? (
@@ -724,10 +729,6 @@ export function StudioPage(): ReactElement {
             busy={busy}
             onSubmit={(s) => void run(s)}
           />
-          <div className="kv mono">
-            <span>引擎</span>
-            <span className="v">{tool.capability ?? '本地'}</span>
-          </div>
           <div className="kv mono">
             <span>配额</span>
             <span className="v">{me ? `今日剩余 ${me.quota.remaining} 次 · ${untilText(me.quota.resetsAt)}重置` : '…'}</span>
