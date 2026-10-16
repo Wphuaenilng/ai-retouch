@@ -41,7 +41,14 @@ const EnvSchema = z.object({
 
   ARK_API_KEY: z.string().optional(),
   ARK_BASE_URL: z.string().default('https://ark.cn-beijing.volces.com/api/v3'),
-  ARK_IMAGE_MODEL: z.string().default('doubao-seedream-4-5-250828'),
+  /**
+   * 2026-09-28 拿真 key 列过账号里的模型：以前这个默认值 `doubao-seedream-4-5-250828` **不存在**
+   * （4-5 只有 `-251128`，且已 Retiring → 直接 InvalidEndpointOrModel.NotFound）。
+   * 在架子上的：`doubao-seedream-4-0-250828`、`-4-0-20260415`、`-5-0-260128`、
+   * `-5-0-pro-260628`、`-5-0-flash-260915`。默认取 4.0 那一版（量级与 01 §5 的估价对得上）。
+   * 模型"在架"不等于"开通"：没在控制台开通的会 404 `ModelNotOpen`，那是账号状态不是字段错。
+   */
+  ARK_IMAGE_MODEL: z.string().default('doubao-seedream-4-0-250828'),
 
   DASHSCOPE_API_KEY: z.string().optional(),
   DASHSCOPE_BASE_URL: z.string().default('https://dashscope.aliyuncs.com/api/v1'),

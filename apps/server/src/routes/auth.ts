@@ -4,6 +4,7 @@ import { config } from '../config';
 import { clearSessionCookie, serializeSessionCookie, SESSION_COOKIE } from '../lib/cookies';
 import { err } from '../lib/errors';
 import { strParam } from '../lib/parse';
+import { availableCapabilities } from '../providers/registry';
 import { deleteAccount } from '../services/accounts';
 import { changePassword, login, logout, meFromClaims, register } from '../services/auth';
 import { setConsent } from '../store/users';
@@ -91,6 +92,8 @@ export function authRoutes(app: FastifyInstance): void {
       editCopyMaxEdge: config.EDIT_COPY_MAX_EDGE,
       planner: config.LLM_PLAN_PROVIDER,
       cookieSecure: config.cookieSecure,
+      // 工具箱拿它置灰：只列"当前配置真的做得到"的能力，与规划器同一份口径
+      capabilities: availableCapabilities(),
     },
   }));
 }

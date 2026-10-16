@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTool, toolsByGroup, type DocumentDTO, type ImageDTO, type MeDTO, type TaskDTO, type ToolDef } from '@retouch/shared';
+import {
+  getTool,
+  isToolServable,
+  toolBlockedText,
+  toolsByGroup,
+  type DocumentDTO,
+  type ImageDTO,
+  type MeDTO,
+  type TaskDTO,
+  type ToolDef,
+} from '@retouch/shared';
 import { api, errorText } from '../../lib/api';
 import { prepareUpload } from '../../lib/image';
 import { untilText } from '../../lib/time';
@@ -310,6 +320,8 @@ export function StudioPage(): ReactElement {
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [loaded, setLoaded] = useState(false);
+  /** 当前配置真做得到的能力；null = /api/config 还没回来（或老版本没这个字段），此时一律放行 */
+  const [caps, setCaps] = useState<string[] | null>(null);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tlW, setTlW, resetTlW] = useColWidth('studio.toolListW', 240, 180, 420);
@@ -352,8 +364,23 @@ export function StudioPage(): ReactElement {
       .get<{ me: MeDTO }>('/api/me')
       .then((r) => setMe(r.me))
       .catch(() => undefined);
+    // 这是 /api/config 的第一个调用方：工具箱得知道上游当前做得到哪几件事
+    void api
+      .get<{ capabilities?: string[] }>('/api/config')
+      .then((r) => setCaps(Array.isArray(r.capabilities) ? r.capabilities : null))
+      .catch(() => undefined);
     void refresh();
   }, [refresh]);
+
+  // 默认选中的是抠图（需要 segment 能力），只配百炼时它是做不到的那一个 ——
+  // 能力回来后发现手里这个被置灰了，就换一个做得到的，别让舞台停在一个不能用的工具上
+  useEffect(() => {
+    if (caps === null || isToolServable(tool, caps)) return;
+    const next = toolsByGroup('ai')
+      .filter((t) => t.priority <= 1)
+      .find((t) => isToolServable(t, caps));
+    if (next) setTool(next);
+  }, [caps, tool]);
 
   useEvent('task.succeeded', (e) => {
     setTask(e.task);
@@ -515,13 +542,23 @@ export function StudioPage(): ReactElement {
           <div className="tl-group">AI 工具</div>
           {toolsByGroup('ai')
             .filter((t) => t.priority <= 1)
-            .map((t) => (
-              <button key={t.name} className={`tl-item ${tool.name === t.name ? 'on' : ''}`} onClick={() => setTool(t)}>
-                <Icon name={t.icon} />
-                {t.title}
-                <span className="cost">¥{t.costYuan}</span>
-              </button>
-            ))}
+            .map((t) => {
+              const ok = isToolServable(t, caps);
+              return (
+                <button
+                  key={t.name}
+                  className={`tl-item ${tool.name === t.name ? 'on' : ''}`}
+                  disabled={!ok}
+                  title={ok ? undefined : `${toolBlockedText(t)}：换个能做的事，或让管理员配上做得到它的上游`}
+                  onClick={() => setTool(t)}
+                >
+                  <Icon name={t.icon} />
+                  {t.title}
+                  {/* 置灰而不是消失：藏起来人会以为功能没了，灰着并写明原因才知道是配置问题 */}
+                  <span className="cost">{ok ? `¥${t.costYuan}` : '做不到'}</span>
+                </button>
+              );
+            })}
           <div className="tl-group">本地工具 · 不计费</div>
           {toolsByGroup('local').map((t) => (
             <button key={t.name} className={`tl-item ${tool.name === t.name ? 'on' : ''}`} onClick={() => setTool(t)}>
@@ -536,7 +573,9 @@ export function StudioPage(): ReactElement {
         <div className="stage">
           <div className="stage-h">
             <h3>{tool.title}</h3>
-            <span className="hint">{tool.agentHint.split('。')[0]}。</span>
+            <span className="hint">
+              {isToolServable(tool, caps) ? `${tool.agentHint.split('。')[0]}。` : toolBlockedText(tool)}
+            </span>
           </div>
 
           {loadError && (

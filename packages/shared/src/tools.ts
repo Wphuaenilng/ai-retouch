@@ -522,6 +522,34 @@ export function toolServableBy(name: string, availableCaps: readonly string[]): 
   return !t.capability || availableCaps.includes(t.capability);
 }
 
+/** 能力的人话名字：工具箱要说"做不到的是哪件事"，而不是甩一个 inpaint */
+export const CAPABILITY_LABEL_ZH: Record<string, string> = {
+  text2image: '文生图',
+  edit: '整图编辑',
+  inpaint: '按选区局部重绘',
+  outpaint: '向外扩图',
+  upscale: '超分放大',
+  segment: '抠图分离',
+  portrait: '人像美化',
+  textRender: '画面文字渲染',
+};
+
+/**
+ * 工具箱用的口径。`caps` 为 null 表示**还没从服务端拿到配置** ——
+ * 这时候一律放行：把能做的功能先灰掉，等一个请求回来才亮，比"看着像坏了"好。
+ * 拿到之后按 `availableCapabilities()` 的结果说实话。
+ */
+export function isToolServable(tool: ToolDef, caps: readonly string[] | null): boolean {
+  if (caps === null) return true;
+  return !tool.capability || caps.includes(tool.capability);
+}
+
+/** 做不到时给人看的那句话 */
+export function toolBlockedText(tool: ToolDef): string {
+  const cap = tool.capability ? (CAPABILITY_LABEL_ZH[tool.capability] ?? tool.capability) : '这项处理';
+  return `当前配置的上游做不到「${cap}」`;
+}
+
 /** 校验并钳制参数；返回 { ok, value | issues } */
 export function validateToolParams(
   name: string,
