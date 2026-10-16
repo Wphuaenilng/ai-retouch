@@ -323,6 +323,8 @@ export function StudioPage(): ReactElement {
   /** 当前配置真做得到的能力；null = /api/config 还没回来（或老版本没这个字段），此时一律放行 */
   const [caps, setCaps] = useState<string[] | null>(null);
   const [maxMb, setMaxMb] = useState(20);
+  const [samples, setSamples] = useState<{ id: string; label: string; note: string }[]>([]);
+  const [sampling, setSampling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ text: string; ok: boolean } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [tlW, setTlW, resetTlW] = useColWidth('studio.toolListW', 240, 180, 420);
@@ -374,6 +376,10 @@ export function StudioPage(): ReactElement {
         if (typeof r.maxUploadMb === 'number') setMaxMb(r.maxUploadMb);
       })
       .catch(() => undefined);
+    void api
+      .get<{ samples: { id: string; label: string; note: string }[] }>('/api/samples')
+      .then((r) => setSamples(r.samples))
+      .catch(() => setSamples([])); // 老服务端没这个接口：不显示入口，而不是点了报错
     void refresh();
   }, [refresh]);
 
@@ -444,6 +450,25 @@ export function StudioPage(): ReactElement {
       return;
     }
     await doUpload(file);
+  };
+
+  /**
+   * 用测试图：不经过隐私告知弹窗，因为**没有任何属于这个人的东西离开浏览器** ——
+   * 图是服务端自己那份。等他想传自己的照片时，告知照样会弹。
+   */
+  const applySample = async (id: string): Promise<void> => {
+    setSampling(id);
+    try {
+      const r = await api.post<{ image: ImageDTO }>(`/api/samples/${id}`);
+      await refresh();
+      setCurrentId(r.image.id);
+      setTask(null);
+      flash('已放入测试图，选个功能就能跑', true);
+    } catch (e) {
+      flash(errorText(e));
+    } finally {
+      setSampling(null);
+    }
   };
 
   // 删掉 = 文件也从盘上走。确认一句，因为这是不可撤销的
@@ -603,13 +628,32 @@ export function StudioPage(): ReactElement {
           {!loaded ? (
             <div className="stage-empty">正在读取图片与项目…</div>
           ) : !current && tool.name !== 'text2image' ? (
-            <div className="drop" onClick={() => fileRef.current?.click()}>
-              拖一张图进来，或点击选择
-              <br />
-              <span className="mono" style={{ fontSize: 12 }}>
-                PNG / JPEG / WebP · 最大 {maxMb}MB · 浏览器内压缩后上传
-              </span>
-            </div>
+            <>
+              <div className="drop" onClick={() => fileRef.current?.click()}>
+                拖一张图进来，或点击选择
+                <br />
+                <span className="mono" style={{ fontSize: 12 }}>
+                  PNG / JPEG / WebP · 最大 {maxMb}MB · 浏览器内压缩后上传
+                </span>
+              </div>
+              {samples.length > 0 && (
+                <div className="samples">
+                  <span className="samples-lab">手上没有照片？先用测试图走一遍 —— 它和你上传的图之后完全同权：</span>
+                  {samples.map((s) => (
+                    <button
+                      key={s.id}
+                      className="sample"
+                      disabled={sampling !== null}
+                      onClick={() => void applySample(s.id)}
+                      title={s.note}
+                    >
+                      <img src={`/api/samples/${s.id}`} alt="" />
+                      <span>{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
           ) : result && current ? (
             <>
               <CompareStage before={current} after={result} />

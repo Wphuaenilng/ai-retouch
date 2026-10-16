@@ -14,6 +14,7 @@ import { eventRoutes } from './routes/events';
 import { imageRoutes } from './routes/images';
 import { taskRoutes } from './routes/tasks';
 import { uploadRoutes } from './routes/uploads';
+import { sampleRoutes } from './routes/samples';
 import { authPreHandler } from './routes/_http';
 import { providerStatus } from './providers/registry';
 import { migrate } from './db/migrate';
@@ -126,6 +127,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   authRoutes(app);
   uploadRoutes(app);
+  sampleRoutes(app);
   imageRoutes(app);
   taskRoutes(app);
   documentRoutes(app);

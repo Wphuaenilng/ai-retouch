@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
     "smoke": "tsx --env-file-if-exists=../../.env scripts/smoke.ts",
+    "samples": "tsx scripts/make-samples.ts",
     "cost-report": "tsx --env-file-if-exists=../../.env scripts/cost-report.ts"
   },
   "dependencies": {

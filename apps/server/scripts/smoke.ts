@@ -206,6 +206,25 @@ async function main(): Promise<void> {
   );
   check('上传并落库', Boolean(up.original.id), `${up.original.width}×${up.original.height}`);
 
+  // 内置测试图：首屏"手上没照片也能走一遍"的入口。列 → 导入 → 读回字节，三步都得通
+  const sList = data(await api<{ data: { samples: { id: string }[] } }>('/api/samples'));
+  check('列出内置测试图', sList.samples.length === 3, sList.samples.map((s) => s.id).join(' '));
+
+  const sImg = data(
+    await api<{ data: { image: { id: string; kind: string; width: number; height: number } } }>('/api/samples/edges', {
+      method: 'POST',
+    }),
+  ).image;
+  const sRes = await fetch(`${BASE}/api/images/${sImg.id}`, { headers: { cookie } });
+  const sBuf = sRes.ok ? await sRes.arrayBuffer() : null;
+  check(
+    '测试图导入成自己的图片',
+    sImg.kind === 'original' && sBuf !== null && sBuf.byteLength > 1000,
+    `${sImg.width}×${sImg.height} · ${Math.round((sBuf?.byteLength ?? 0) / 1024)}KB`,
+  );
+  // 当场删掉：冒烟会反复跑，留着每次都在库里堆一份一样的图
+  await api(`/api/images/${sImg.id}`, { method: 'DELETE' });
+
   const doc = data(
     await api<{ data: { document: { id: string } } }>('/api/documents', {
       method: 'POST',
