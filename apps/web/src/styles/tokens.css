@@ -872,6 +872,19 @@ input[type='color'] {
 .tl-item:hover {
   background: var(--panel-2);
 }
+/* 上游做不到的工具：灰掉但仍读得清（藏起来会让人以为功能消失了，见 05 的 D31） */
+.tl-item:disabled {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  background: none;
+}
+.tl-item:disabled:hover {
+  background: none;
+}
+.tl-item:disabled .cost {
+  color: var(--ink-3);
+  opacity: 0.85;
+}
 .tl-item.on {
   background: var(--panel-3);
   color: var(--ink);
