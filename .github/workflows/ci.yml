@@ -15,11 +15,14 @@ jobs:
           version: 10.32.0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22.12
+          # 与 deploy/Dockerfile 锁的基座同版本。下限是 22.13（node:sqlite 在那之前藏在
+          # --experimental-sqlite 后面），但写下限会正好卡在边界上，下次谁动一下就漂
+          node-version: 22.20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # 与本地 `pnpm verify` 同一套：类型、静态检查、单测、前端构建
+      # 与本地 `pnpm verify` 逐条对齐：少一道闸，"本地绿 = CI 绿"就不成立
       - run: pnpm typecheck
+      - run: pnpm format:check
       - run: pnpm lint
       - run: pnpm test
       - run: pnpm build

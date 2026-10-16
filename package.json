@@ -20,7 +20,9 @@
     "format:check": "prettier --check \"apps/**/*.ts\" \"apps/**/*.tsx\" \"packages/**/*.ts\"",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
-    "verify": "pnpm typecheck && pnpm format:check && pnpm lint && pnpm test && pnpm build"
+    "brand:check": "node ../brand-juntian/bin/check-brand.mjs apps/web/src --baseline brand.baseline.json",
+    "brand:check:update": "node ../brand-juntian/bin/check-brand.mjs apps/web/src --baseline brand.baseline.json --update",
+    "verify": "pnpm typecheck && pnpm format:check && pnpm lint && pnpm brand:check && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
